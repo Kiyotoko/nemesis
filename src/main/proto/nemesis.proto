@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "org.nemesis.grpc";
+option java_outer_classname = "NemesisProto";
+option objc_class_prefix = "API";
+
+service Nemesis {
+  rpc GameStatus(StatusRequest) returns (StatusReply);
+  rpc ChangePlanet(ChangePlanetRequest) returns (ChangeReply);
+  rpc ChangeFleet(ChangeFleetRequest) returns (ChangeReply);
+  rpc ChangeDiplomacity(ChangeDiplomacityRequest) returns (ChangeReply);
+}
+
+message StatusRequest {
+  string game_id = 1;
+  string auth = 2;
+}
+
+message StatusReply {
+  repeated Region region = 1;
+}
+
+message ChangePlanetRequest {
+  string game_id = 1;
+  string auth = 2;
+}
+
+message ChangeFleetRequest {
+  string game_id = 1;
+  string auth = 2;
+}
+
+message ChangeDiplomacityRequest {
+  string game_id = 1;
+  string auth = 2;
+}
+
+message ChangeReply {
+
+}
+
+message Player {
+  string id = 1;
+}
+
+message Region {
+  string id = 1;
+  string type = 2;
+  repeated Fleet fleet = 3;
+  repeated Building building = 4;
+  int32 orbits = 5;
+  int32 slots = 6;
+}
+
+message Fleet {
+  string id = 1;
+  string type = 2;
+  double shield = 3;
+  double armor = 4;
+  double hitpois = 5;
+  double damage = 6;
+}
+
+message Building {
+  string id = 1;
+  string type = 2;
+}

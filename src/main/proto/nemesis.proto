@@ -7,34 +7,47 @@ option java_outer_classname = "NemesisProto";
 option objc_class_prefix = "API";
 
 service Nemesis {
+  rpc JoinGame(JoinRequest) returns (JoinReply);
   rpc GameStatus(StatusRequest) returns (StatusReply);
   rpc ChangePlanet(ChangePlanetRequest) returns (ChangeReply);
   rpc ChangeFleet(ChangeFleetRequest) returns (ChangeReply);
   rpc ChangeDiplomacity(ChangeDiplomacityRequest) returns (ChangeReply);
 }
 
+message JoinRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message JoinReply {
+  string token = 1;
+}
+
 message StatusRequest {
-  string game_id = 1;
-  string auth = 2;
+  string username = 1;
+  string token = 2;
 }
 
 message StatusReply {
-  repeated Region region = 1;
+  map<string, Player> players = 1;
+  map<string, Region> regions = 2;
+  map<string, Building> buildings = 3;
+  map<string, Fleet> fleets = 4;
 }
 
 message ChangePlanetRequest {
-  string game_id = 1;
-  string auth = 2;
+  string username = 1;
+  string token = 2;
 }
 
 message ChangeFleetRequest {
-  string game_id = 1;
-  string auth = 2;
+  string username = 1;
+  string token = 2;
 }
 
 message ChangeDiplomacityRequest {
-  string game_id = 1;
-  string auth = 2;
+  string username = 1;
+  string token = 2;
 }
 
 message ChangeReply {
@@ -48,22 +61,29 @@ message Player {
 message Region {
   string id = 1;
   string type = 2;
-  repeated Fleet fleet = 3;
-  repeated Building building = 4;
-  int32 orbits = 5;
-  int32 slots = 6;
+  string owner = 3;
+  repeated string fleets = 4;
+  repeated string buildings = 5;
+  int32 orbits = 6;
+  int32 slots = 7;
+  double pos_x = 8;
+  double pos_y = 9;
 }
 
 message Fleet {
   string id = 1;
   string type = 2;
-  double shield = 3;
-  double armor = 4;
-  double hitpois = 5;
-  double damage = 6;
+  string owner = 3;
+  string position = 4;
+  double shield = 6;
+  double armor = 7;
+  double hitpois = 8;
+  double damage = 9;
 }
 
 message Building {
   string id = 1;
   string type = 2;
+  string owner = 3;
+  string position = 4;
 }

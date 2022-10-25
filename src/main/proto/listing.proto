@@ -2,21 +2,21 @@ syntax = "proto3";
 
 option java_multiple_files = true;
 option optimize_for = SPEED;
-option java_package = "org.nemesis.grpc";
+option java_package = "org.listing.grpc";
 option java_outer_classname = "ListingProto";
 option objc_class_prefix = "API";
 
 service GameListing {
   rpc HostGame(HostRequest) returns (HostReply);
   rpc ListGame(ListRequest) returns (ListReply);
-  rpc JoinGame(JoinRequest) returns (JoinReply);
 }
 
 message HostRequest {
   string hostname = 1;
   string password = 2;
-  string description = 3;
-  bool public = 4;
+  string name = 3;
+  int32 port = 4;
+  bool public = 5;
 }
 
 message HostReply {
@@ -30,18 +30,9 @@ message ListRequest {
 message ListReply {
   message Game {
     string id = 1;
-    string name = 2;
-    string desc = 3;
-    bool secured = 4;
+    string hostname = 2;
+    string description = 3;
+    string address = 4;
   }
   repeated Game game = 1;
-}
-
-message JoinRequest {
-  string game_id = 1;
-  string password = 2;
-}
-
-message JoinReply {
-  string player_id = 1;
 }

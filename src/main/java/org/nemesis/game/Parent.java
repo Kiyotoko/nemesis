@@ -1,6 +1,6 @@
 package org.nemesis.game;
 
-import java.util.Set;
+import java.util.Collection;
 
 public interface Parent extends Entity {
     @Override
@@ -10,5 +10,5 @@ public interface Parent extends Entity {
         }
     }
 
-    public Set<? extends Entity> getChildren();
+    public Collection<? extends Entity> getChildren();
 }

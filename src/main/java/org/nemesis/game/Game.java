@@ -19,7 +19,14 @@ public class Game {
     }, 50l);
 
     public Game() {
+        Region sun = new Region();
+        regions.put(sun.getId(), sun);
 
+        for (double radius = 50 + Math.random() * 50; radius < 786 / 2; radius += 50 + Math.random() * radius) {
+            double angel = Math.toRadians(Math.random() * 360);
+            Region planet = new Region(sun, Math.cos(angel) * radius, Math.sin(angel) * radius);
+            regions.put(planet.getId(), planet);
+        }
     }
 
     public Map<String, Player> getPlayers() {

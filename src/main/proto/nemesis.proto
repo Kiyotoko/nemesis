@@ -29,10 +29,10 @@ message StatusRequest {
 }
 
 message StatusReply {
-  map<string, Player> players = 1;
-  map<string, Region> regions = 2;
-  map<string, Building> buildings = 3;
-  map<string, Fleet> fleets = 4;
+  repeated Player players = 1;
+  repeated Region regions = 2;
+  repeated Building buildings = 3;
+  repeated Fleet fleets = 4;
 }
 
 message ChangePlanetRequest {

@@ -1,5 +1,6 @@
 package org.nemesis.game;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -16,6 +17,16 @@ public class Region implements Parent, Corresponding<org.nemesis.grpc.Region> {
 
     private double posX;
     private double posY;
+
+    public Region(Region center, double posX, double posY) {
+        this(posX, posY);
+        center.getSubregions().add(this);
+    }
+
+    public Region(double posX, double posY) {
+        this.posX = posX;
+        this.posY = posY;
+    }
 
     public Region() {
 
@@ -50,8 +61,8 @@ public class Region implements Parent, Corresponding<org.nemesis.grpc.Region> {
     }
 
     @Override
-    public Set<? extends Entity> getChildren() {
-        return (Set<? extends Entity>) buildings.values();
+    public Collection<Building> getChildren() {
+        return buildings.values();
     }
 
     public Map<String, Building> getBuildings() {
@@ -62,12 +73,24 @@ public class Region implements Parent, Corresponding<org.nemesis.grpc.Region> {
         return fleets;
     }
 
+    public Set<Region> getSubregions() {
+        return subregions;
+    }
+
     public Player getPlayer() {
         return owner;
     }
 
+    public void setPosX(double posX) {
+        this.posX = posX;
+    }
+
     public double getPosX() {
         return posX;
+    }
+
+    public void setPosY(double posY) {
+        this.posY = posY;
     }
 
     public double getPosY() {

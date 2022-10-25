@@ -15,8 +15,8 @@ public class RemoteClient {
     private final ManagedChannel channel;
     private final NemesisBlockingStub blockingStub;
 
-    public RemoteClient() {
-        channel = ManagedChannelBuilder.forAddress("localhost", 7777).usePlaintext().build();
+    public RemoteClient(int port) {
+        channel = ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
         blockingStub = NemesisGrpc.newBlockingStub(channel);
         logger.info("Client started");
     }
@@ -45,13 +45,19 @@ public class RemoteClient {
         return true;
     }
 
-    private String username, token;
+    private String username = "", token = "";
 
     public JoinReply joinGame(String password) {
+        if (!isRunning()) {
+            return JoinReply.newBuilder().build();
+        }
         return blockingStub.joinGame(JoinRequest.newBuilder().setUsername(username).setPassword(password).build());
     }
 
     public StatusReply gameStatus() {
+        if (!isRunning()) {
+            return StatusReply.newBuilder().build();
+        }
         return blockingStub.gameStatus(StatusRequest.newBuilder().setUsername(token).setToken(token).build());
     }
 }

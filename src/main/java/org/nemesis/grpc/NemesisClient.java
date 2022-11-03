@@ -9,13 +9,13 @@ import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
-public class RemoteClient {
-    private static final Logger logger = Logger.getLogger(RemoteClient.class.getName());
+public class NemesisClient {
+    private static final Logger logger = Logger.getLogger(NemesisClient.class.getName());
 
     private final ManagedChannel channel;
     private final NemesisBlockingStub blockingStub;
 
-    public RemoteClient(int port) {
+    public NemesisClient(int port) {
         channel = ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
         blockingStub = NemesisGrpc.newBlockingStub(channel);
         logger.info("Client started");

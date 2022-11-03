@@ -9,9 +9,9 @@ option objc_class_prefix = "API";
 service Nemesis {
   rpc JoinGame(JoinRequest) returns (JoinReply);
   rpc GameStatus(StatusRequest) returns (StatusReply);
-  rpc ChangePlanet(ChangePlanetRequest) returns (ChangeReply);
-  rpc ChangeFleet(ChangeFleetRequest) returns (ChangeReply);
-  rpc ChangeDiplomacity(ChangeDiplomacityRequest) returns (ChangeReply);
+  rpc ChangeEconomy(ChangeEconomyRequest) returns (ChangeReply);
+  rpc ChangeMilitary(ChangeMilitaryRequest) returns (ChangeReply);
+  rpc ChangeDevense(ChangeDevenseRequest) returns (ChangeReply);
 }
 
 message JoinRequest {
@@ -31,23 +31,31 @@ message StatusRequest {
 message StatusReply {
   repeated Player players = 1;
   repeated Region regions = 2;
-  repeated Building buildings = 3;
-  repeated Fleet fleets = 4;
 }
 
-message ChangePlanetRequest {
+message ChangeEconomyRequest {
   string username = 1;
   string token = 2;
+  string location = 3;
+  bool upgrad = 5;
+  bool destroy = 6;
 }
 
-message ChangeFleetRequest {
+message ChangeDevenseRequest {
   string username = 1;
   string token = 2;
+  string location = 3;
+  bool upgrad = 5;
+  bool destroy = 6;
 }
 
-message ChangeDiplomacityRequest {
+message ChangeMilitaryRequest {
   string username = 1;
   string token = 2;
+  string location = 3;
+  string destination = 4;
+  bool upgrad = 5;
+  bool destroy = 6;
 }
 
 message ChangeReply {
@@ -62,28 +70,14 @@ message Region {
   string id = 1;
   string type = 2;
   string owner = 3;
-  repeated string fleets = 4;
-  repeated string buildings = 5;
-  int32 orbits = 6;
-  int32 slots = 7;
-  double pos_x = 8;
-  double pos_y = 9;
-}
-
-message Fleet {
-  string id = 1;
-  string type = 2;
-  string owner = 3;
-  string position = 4;
-  double shield = 6;
-  double armor = 7;
-  double hitpois = 8;
-  double damage = 9;
-}
-
-message Building {
-  string id = 1;
-  string type = 2;
-  string owner = 3;
-  string position = 4;
+  int32 economy_development = 4;
+  int32 devense_development = 5;
+  int32 military_development = 6;
+  int32 economy_maximum = 7;
+  int32 devense_maximum = 8;
+  int32 military_maximum = 9;
+  double position_x = 10;
+  double position_y = 11;
+  double diameter = 12;
+  string name = 13;
 }

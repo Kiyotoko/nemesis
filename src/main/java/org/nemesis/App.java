@@ -5,8 +5,8 @@ import java.util.Map;
 
 import org.nemesis.graphic.Region;
 import org.nemesis.grpc.Creator;
-import org.nemesis.grpc.RemoteClient;
-import org.nemesis.grpc.RemoteServer;
+import org.nemesis.grpc.NemesisClient;
+import org.nemesis.grpc.NemesisServer;
 import org.nemesis.grpc.StatusReply;
 
 import javafx.animation.AnimationTimer;
@@ -20,7 +20,9 @@ import javafx.scene.Node;
 import javafx.scene.ParallelCamera;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
+import javafx.scene.SubScene;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 public class App extends Application {
@@ -29,24 +31,25 @@ public class App extends Application {
 
     int port = 8080;
 
-    private final RemoteServer server = new RemoteServer(port);
-    private final RemoteClient client = new RemoteClient(port);
+    private final NemesisServer server = new NemesisServer(port);
+    private final NemesisClient client = new NemesisClient(port);
 
     private final ObservableMap<String, Node> players = FXCollections.observableHashMap();
     private final ObservableMap<String, Region> regions = FXCollections.observableHashMap();
     private final ObservableMap<String, Node> buildings = FXCollections.observableHashMap();
     private final ObservableMap<String, Node> fleets = FXCollections.observableHashMap();
 
-    private final Group group = new Group();
+    private final BorderPane ui = new BorderPane();
+    private final Group content = new Group();
 
     public App() {
         regions.addListener(new MapChangeListener<String, Region>() {
             @Override
             public void onChanged(Change<? extends String, ? extends Region> change) {
                 if (change.wasAdded())
-                    group.getChildren().add(change.getValueAdded());
+                    content.getChildren().add(change.getValueAdded());
                 if (change.wasRemoved())
-                    group.getChildren().remove(change.getValueRemoved());
+                    content.getChildren().remove(change.getValueRemoved());
             }
         });
     }
@@ -91,12 +94,18 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        Scene scene = new Scene(group, 786, 786, true, SceneAntialiasing.BALANCED);
+        Scene scene = new Scene(ui, 786, 786);
+
+        SubScene subscene = new SubScene(content, 786, 786, true, SceneAntialiasing.BALANCED);
+        subscene.widthProperty().bind(scene.widthProperty());
+        subscene.heightProperty().bind(scene.heightProperty());
+
+        ui.getChildren().addAll(subscene);
 
         Camera camera = new ParallelCamera();
         camera.setLayoutX(-786 / 2);
         camera.setLayoutY(-786 / 2);
-        scene.setCamera(camera);
+        subscene.setCamera(camera);
 
         stage.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
             switch (e.getCode()) {
@@ -112,8 +121,9 @@ public class App extends Application {
                 case D -> {
                     camera.setLayoutX(camera.getLayoutX() + 10);
                 }
-                default ->
-                    throw new IllegalArgumentException("Unexpected value: " + e.getCode());
+                default -> {
+
+                }
             }
         });
 
@@ -143,5 +153,13 @@ public class App extends Application {
 
     public ObservableMap<String, Node> getFleets() {
         return fleets;
+    }
+
+    public BorderPane getUi() {
+        return ui;
+    }
+
+    public Group getGameContent() {
+        return content;
     }
 }

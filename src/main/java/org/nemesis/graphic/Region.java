@@ -3,21 +3,42 @@ package org.nemesis.graphic;
 import org.nemesis.App;
 
 import javafx.scene.Group;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 public class Region extends Group implements Reference<org.nemesis.grpc.Region> {
-    private final App app;
+    private final Circle region = new Circle();
 
-    private final Circle back = new Circle(25);
+    private final InfoHelper infoHelper;
 
     public Region(App app) {
-        this.app = app;
-        getChildren().add(back);
+        infoHelper = new InfoHelper(app);
+
+        region.setFill(
+                Color.rgb(80 + (int) (Math.random() * 160), 80 + (int) (Math.random() * 160),
+                        80 + (int) (Math.random() * 160)));
+        addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            BorderPane popups = app.getUi();
+            if (popups.getCenter() == infoHelper) {
+                popups.setCenter(null);
+            } else {
+                popups.setCenter(infoHelper);
+            }
+        });
+        getChildren().add(region);
     }
 
     @Override
     public void update(org.nemesis.grpc.Region delta) {
-        back.setCenterX(delta.getPosX());
-        back.setCenterY(delta.getPosY());
+        region.setRadius(10 + delta.getDiameter() * 10);
+        region.setCenterX(delta.getPositionX());
+        region.setCenterY(delta.getPositionY());
+
+        infoHelper.getName().set(delta.getName());
+        infoHelper.getEconomy().set(1);  //((double) delta.getEconomyDevelopment()) / ((double) delta.getEconomyMaximum()));
+        infoHelper.getMilitary().set(1);  //((double) delta.getMilitaryDevelopment()) / ((double) delta.getMilitaryMaximum()));
+        infoHelper.getDevense().set(1);  //((double) delta.getMilitaryDevelopment()) / ((double) delta.getDevenseMaximum()));
     }
 }

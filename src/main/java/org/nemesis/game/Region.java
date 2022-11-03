@@ -1,51 +1,87 @@
 package org.nemesis.game;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.nemesis.grpc.Corresponding;
 
-public class Region implements Parent, Corresponding<org.nemesis.grpc.Region> {
-    private final Map<String, Building> buildings = new HashMap<>();
-    private final Map<String, Fleet> fleets = new HashMap<>();
-    private final Set<Region> subregions = new HashSet<>();
+public class Region implements Comparable<Region>, Entity, Corresponding<org.nemesis.grpc.Region> {
+    private final Game game;
 
     private Player owner = Player.UNOCCUPIED;
+    private Region center;
 
-    private double posX;
-    private double posY;
+    private final double size;
 
-    public Region(Region center, double posX, double posY) {
-        this(posX, posY);
-        center.getSubregions().add(this);
+    private final int economyMaximum;
+    private final int militaryMaximum;
+    private final int devenseMaximum;
+
+    private int economyDevelopment;
+    private int militaryDevelopment;
+    private int devenseDevelopment;
+
+    private double posX, posY;
+
+    public Region(Game game) {
+        this.game = game;
+        size = Math.pow(Math.random(), 2);
+        economyMaximum = 1 + (int) (size * 10);
+        militaryMaximum = 1 + (int) (size * 10);
+        devenseMaximum = 1 + (int) (size * 10);
+        game.getRegions().put(getId(), this);
     }
 
-    public Region(double posX, double posY) {
-        this.posX = posX;
-        this.posY = posY;
+    public Region(Game game, double size, int economy, int military, int devense) {
+        this.game = game;
+        this.size = size;
+        this.economyMaximum = economy;
+        this.militaryMaximum = military;
+        this.devenseMaximum = devense;
+        game.getRegions().put(getId(), this);
     }
 
-    public Region() {
+    static void sub(Game game, Region top) {
+        Set<Region> regions = new TreeSet<>();
+        for (double f = 0; f < 4; f += 1) {
+            var region = new Region(game);
+            region.center = top;
+            regions.add(region);
+        }
+        double index = 1, total = regions.size();
+        for (Region region : regions) {
+            double angel = Math.toRadians(Math.random() * 360);
+            double radius = (400.0 / region.getLayer()) *
+                    (index / total);
+            region.setPosX(Math.cos(angel) * radius);
+            region.setPosY(Math.sin(angel) * radius);
+            index++;
+        }
+    }
 
+    static Region at(Game game, double x, double y) {
+        var ret = new Region(game, 1, 0, 22, 0) {
+            @Override
+            public void update(double deltaT) {
+
+            }
+        };
+        ret.setPosX(x);
+        ret.setPosY(y);
+        return ret;
     }
 
     @Override
     public void update(double deltaT) {
-        Parent.super.update(deltaT);
-        for (Region subregion : subregions) {
-            subregion.rotate(this, deltaT);
-        }
+        rotate(deltaT);
     }
 
-    public void rotate(Region center, double deltaT) {
+    public void rotate(double deltaT) {
         double difX = posX - center.posX;
         double difY = posY - center.posY;
 
         double radius = Math.hypot(difX, difY);
-        double angel = Math.atan2(difY, difX) + (deltaT / radius * Math.PI);
+        double angel = Math.atan2(difY, difX) + (deltaT / (radius * 60));
 
         posX = center.posX + Math.cos(angel) * radius;
         posY = center.posY + Math.sin(angel) * radius;
@@ -60,25 +96,18 @@ public class Region implements Parent, Corresponding<org.nemesis.grpc.Region> {
         return hash;
     }
 
-    @Override
-    public Collection<Building> getChildren() {
-        return buildings.values();
-    }
-
-    public Map<String, Building> getBuildings() {
-        return buildings;
-    }
-
-    public Map<String, Fleet> getFleets() {
-        return fleets;
-    }
-
-    public Set<Region> getSubregions() {
-        return subregions;
-    }
-
     public Player getPlayer() {
         return owner;
+    }
+
+    public int getLayer() {
+        if (center != null)
+            return center.getLayer() + 1;
+        return 0;
+    }
+
+    public double getSize() {
+        return size;
     }
 
     public void setPosX(double posX) {
@@ -100,7 +129,15 @@ public class Region implements Parent, Corresponding<org.nemesis.grpc.Region> {
     @Override
     public org.nemesis.grpc.Region associated() {
         return org.nemesis.grpc.Region.newBuilder().setId(getId()).setOwner(owner.getId())
-                .addAllBuildings(buildings.keySet()).addAllFleets(fleets.keySet()).setPosX(posX).setPosY(posY)
+                .setEconomyMaximum(economyMaximum).setEconomyDevelopment(economyDevelopment)
+                .setMilitaryMaximum(militaryMaximum).setMilitaryDevelopment(militaryDevelopment)
+                .setDevenseMaximum(devenseMaximum).setDevenseDevelopment(devenseDevelopment)
+                .setPositionX(posX).setPositionY(posY).setDiameter(size)
                 .build();
+    }
+
+    @Override
+    public int compareTo(Region o) {
+        return (int) Math.signum(size - o.size);
     }
 }

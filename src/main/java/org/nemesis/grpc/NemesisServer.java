@@ -12,14 +12,14 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 
-public class RemoteServer {
-    private static final Logger logger = Logger.getLogger(RemoteServer.class.getName());
+public class NemesisServer {
+    private static final Logger logger = Logger.getLogger(NemesisServer.class.getName());
 
     private final Server server;
 
     private Game game = new Game();
 
-    public RemoteServer(int port) {
+    public NemesisServer(int port) {
         server = ServerBuilder.forPort(port).addService(new NemesisService())
                 .build();
         try {

@@ -2,8 +2,6 @@ package org.nemesis.graphic;
 
 import org.nemesis.App;
 
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Insets;
@@ -20,9 +18,11 @@ import javafx.scene.shape.Rectangle;
 public class InfoHelper extends Group {
     private final StringProperty name = new SimpleStringProperty();
 
-    private final DoubleProperty economy = new SimpleDoubleProperty();
-    private final DoubleProperty devense = new SimpleDoubleProperty();
-    private final DoubleProperty military = new SimpleDoubleProperty();
+    private final LevelBar economy = new LevelBar();
+    private final LevelBar devense = new LevelBar();
+    private final LevelBar military = new LevelBar();
+
+    private String id;
 
     public InfoHelper(App app) {
         VBox content = new VBox(20);
@@ -51,48 +51,23 @@ public class InfoHelper extends Group {
         // ##### view #####
         VBox view = new VBox(8);
 
-        LevelBar ec = new LevelBar(app);
-        economy.addListener((observable, o, n) -> {
-            if (n.doubleValue() == 0) {
-                ec.getFill().set(Color.gray(.5));
-                ec.getPercentage().set(1);
-            } else {
-                ec.getPercentage().set(n.doubleValue());
-            }
-        });
-        ec.getFill().set(Color.LIMEGREEN);
+        economy.getFill().set(Color.LIMEGREEN);
+        military.getFill().set(Color.RED);
+        devense.getFill().set(Color.CORNFLOWERBLUE);
 
-        LevelBar de = new LevelBar(app);
-        devense.addListener((observable, o, n) -> {
-            if (n.doubleValue() == 0) {
-                de.getFill().set(Color.gray(.5));
-                de.getPercentage().set(1);
-            } else {
-                de.getPercentage().set(n.doubleValue());
-            }
-        });
-        de.getFill().set(Color.CORNFLOWERBLUE);
-
-        LevelBar mi = new LevelBar(app);
-        military.addListener((observable, o, n) -> {
-            if (n.doubleValue() == 0) {
-                mi.getFill().set(Color.gray(.5));
-                mi.getPercentage().set(1);
-            } else {
-                mi.getPercentage().set(n.doubleValue());
-            }
-        });
-        mi.getFill().set(Color.RED);
-
-        view.getChildren().addAll(ec, de, mi);
+        view.getChildren().addAll(economy, military, devense);
         body.getChildren().add(view);
 
         // ##### options #####
         VBox options = new VBox(8);
-        options.getChildren().addAll(new EventButton(app, e -> {
-        }), new EventButton(app, e -> {
-        }), new EventButton(app, e -> {
-        }));
+        options.getChildren().addAll(
+                new EventButton(e -> {
+                    app.getClient().changeEconomy(id, true, false);
+                }), new EventButton(e -> {
+                    app.getClient().changeMilitary(id, "", true, false);
+                }), new EventButton(e -> {
+                    app.getClient().changeDevense(id, true, false);
+                }));
         body.getChildren().add(options);
 
         content.getChildren().add(body);
@@ -112,15 +87,21 @@ public class InfoHelper extends Group {
         return name;
     }
 
-    public DoubleProperty getEconomy() {
+    public LevelBar getEconomy() {
         return economy;
     }
 
-    public DoubleProperty getDevense() {
+    public LevelBar getDevense() {
         return devense;
     }
 
-    public DoubleProperty getMilitary() {
+    public LevelBar getMilitary() {
         return military;
+    }
+
+    public void bindId(String value) {
+        if (id == null) {
+            id = value;
+        }
     }
 }

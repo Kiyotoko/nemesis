@@ -29,6 +29,9 @@ public class Region implements Comparable<Region>, Entity, Corresponding<org.nem
         economyMaximum = 1 + (int) (size * 10);
         militaryMaximum = 1 + (int) (size * 10);
         devenseMaximum = 1 + (int) (size * 10);
+        economyDevelopment = (int) (Math.random() * economyMaximum);
+        militaryDevelopment = (int) (Math.random() * militaryMaximum);
+        devenseDevelopment = (int) (Math.random() * devenseMaximum);
         game.getRegions().put(getId(), this);
     }
 
@@ -38,6 +41,9 @@ public class Region implements Comparable<Region>, Entity, Corresponding<org.nem
         this.economyMaximum = economy;
         this.militaryMaximum = military;
         this.devenseMaximum = devense;
+        economyDevelopment = (int) (Math.random() * economyMaximum);
+        militaryDevelopment = (int) (Math.random() * militaryMaximum);
+        devenseDevelopment = (int) (Math.random() * devenseMaximum);
         game.getRegions().put(getId(), this);
     }
 
@@ -108,6 +114,30 @@ public class Region implements Comparable<Region>, Entity, Corresponding<org.nem
 
     public double getSize() {
         return size;
+    }
+
+    public boolean upgradeEconomy() {
+        if (economyDevelopment == economyMaximum) {
+            return false;
+        }
+        economyDevelopment++;
+        return true;
+    }
+
+    public boolean upgradeMilitary() {
+        if (militaryDevelopment == militaryMaximum) {
+            return false;
+        }
+        militaryDevelopment++;
+        return true;
+    }
+
+    public boolean upgradeDevense() {
+        if (devenseDevelopment == devenseMaximum) {
+            return false;
+        }
+        devenseDevelopment++;
+        return true;
     }
 
     public void setPosX(double posX) {

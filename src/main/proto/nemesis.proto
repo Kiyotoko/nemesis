@@ -59,7 +59,7 @@ message ChangeMilitaryRequest {
 }
 
 message ChangeReply {
-
+  bool changed = 1;
 }
 
 message Player {

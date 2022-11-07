@@ -155,6 +155,10 @@ public class App extends Application {
         return fleets;
     }
 
+    public NemesisClient getClient() {
+        return client;
+    }
+
     public BorderPane getUi() {
         return ui;
     }

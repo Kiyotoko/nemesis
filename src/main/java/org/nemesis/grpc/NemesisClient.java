@@ -22,10 +22,8 @@ public class NemesisClient {
     }
 
     public void stop() throws Exception {
-        if (channel != null) {
-            channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
-            logger.info("Client shutdown");
-        }
+        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        logger.info("Client shutdown");
     }
 
     public boolean isRunning() {
@@ -59,5 +57,32 @@ public class NemesisClient {
             return StatusReply.newBuilder().build();
         }
         return blockingStub.gameStatus(StatusRequest.newBuilder().setUsername(token).setToken(token).build());
+    }
+
+    public ChangeReply changeEconomy(String location, boolean upgraded, boolean destroyed) {
+        if (!isRunning()) {
+            return ChangeReply.newBuilder().build();
+        }
+        return blockingStub.changeEconomy(ChangeEconomyRequest.newBuilder().setUsername(token).setToken(token)
+                .setLocation(location).setUpgrad(upgraded)
+                .setDestroy(destroyed).build());
+    }
+
+    public ChangeReply changeMilitary(String location, String destination, boolean upgraded, boolean destroyed) {
+        if (!isRunning()) {
+            return ChangeReply.newBuilder().build();
+        }
+        return blockingStub.changeMilitary(ChangeMilitaryRequest.newBuilder().setUsername(token).setToken(token)
+                .setLocation(location).setUpgrad(upgraded)
+                .setDestroy(destroyed).build());
+    }
+
+    public ChangeReply changeDevense(String location, boolean upgraded, boolean destroyed) {
+        if (!isRunning()) {
+            return ChangeReply.newBuilder().build();
+        }
+        return blockingStub.changeDevense(ChangeDevenseRequest.newBuilder().setUsername(token).setToken(token)
+                .setLocation(location).setUpgrad(upgraded)
+                .setDestroy(destroyed).build());
     }
 }

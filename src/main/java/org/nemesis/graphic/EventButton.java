@@ -1,7 +1,5 @@
 package org.nemesis.graphic;
 
-import org.nemesis.App;
-
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.EventHandler;
@@ -15,7 +13,7 @@ import javafx.scene.text.Font;
 public class EventButton extends StackPane {
     private final StringProperty name = new SimpleStringProperty("+");
 
-    public EventButton(App app, EventHandler<MouseEvent> event) {
+    public EventButton(EventHandler<MouseEvent> event) {
         Rectangle back = new Rectangle(50, 30);
         back.setFill(Color.gray(.2));
         back.setArcWidth(16);

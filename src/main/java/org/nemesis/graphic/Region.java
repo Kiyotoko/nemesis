@@ -37,8 +37,12 @@ public class Region extends Group implements Reference<org.nemesis.grpc.Region> 
         region.setCenterY(delta.getPositionY());
 
         infoHelper.getName().set(delta.getName());
-        infoHelper.getEconomy().set(1);  //((double) delta.getEconomyDevelopment()) / ((double) delta.getEconomyMaximum()));
-        infoHelper.getMilitary().set(1);  //((double) delta.getMilitaryDevelopment()) / ((double) delta.getMilitaryMaximum()));
-        infoHelper.getDevense().set(1);  //((double) delta.getMilitaryDevelopment()) / ((double) delta.getDevenseMaximum()));
+        infoHelper.getEconomy().getMax().set(delta.getEconomyMaximum());
+        infoHelper.getEconomy().getMin().set(delta.getEconomyDevelopment());
+        infoHelper.getMilitary().getMax().set(delta.getMilitaryMaximum());
+        infoHelper.getMilitary().getMin().set(delta.getMilitaryDevelopment());
+        infoHelper.getDevense().getMax().set(delta.getDevenseMaximum());
+        infoHelper.getDevense().getMin().set(delta.getDevenseDevelopment());
+        infoHelper.bindId(delta.getId());
     }
 }

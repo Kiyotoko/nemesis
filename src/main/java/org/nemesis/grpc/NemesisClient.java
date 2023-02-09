@@ -1,19 +1,25 @@
 package org.nemesis.grpc;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import org.nemesis.graphic.Game;
 
 import com.karlz.entity.Creator;
 import com.karlz.exchange.ExchangeHelper.StoreHelper;
 import com.karlz.exchange.Reference;
 import com.karlz.grpc.exchange.HostingGrpc;
+import com.karlz.grpc.exchange.JoinRequest;
+import com.karlz.grpc.exchange.PingRequest;
 import com.karlz.grpc.exchange.HostingGrpc.HostingBlockingStub;
 import com.karlz.grpc.game.ChangeRequest;
 import com.karlz.grpc.game.NemesisGrpc;
 import com.karlz.grpc.game.NemesisGrpc.NemesisBlockingStub;
 import com.karlz.grpc.game.Party;
+import com.karlz.grpc.game.Player;
+import com.karlz.grpc.game.Projectile;
 import com.karlz.grpc.game.StatusRequest;
 import com.karlz.grpc.game.StatusResponse;
+import com.karlz.grpc.game.Unit;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -29,37 +35,79 @@ public class NemesisClient {
         hostingBlockingStub = HostingGrpc.newBlockingStub(channel);
     }
 
-    private final StoreHelper<Reference<?>, StatusResponse> helper = new StoreHelper<Reference<?>, StatusResponse>() {
-        private final HashMap<String, Creator<Reference<?>>> creatorsMap = new HashMap<>();
-        private final HashMap<String, Map<String, Reference<?>>> flatMap = new HashMap<>();
+    private final Game game = new Game();
 
-        @Override
-        public Map<String, Creator<Reference<?>>> creatorsMap() {
-            return creatorsMap;
-        }
+    public class NemesisStoreHelper implements StoreHelper<Reference<?>, StatusResponse> {
+        private Map<String, Creator<Reference<?>>> creators = Map.of();
 
-        @Override
-        public Map<String, Map<String, Reference<?>>> flatMap() {
-            return flatMap;
-        }
-
+        @SuppressWarnings("unchecked")
         @Override
         public void update(StatusResponse reference) {
-            for (Party observable : reference.getPartiesList()) {
-                save(observable.getSuper().getType(), observable.getSuper().getId());
+            for (Party party : reference.getPartiesList())
+                save((Map<String, Reference<Party>>) (Map<?, ?>) game.getParties(), party.getSuper().getType(),
+                        party.getSuper().getId()).update(party);
+            for (Player player : reference.getPlayersList())
+                save((Map<String, Reference<Player>>) (Map<?, ?>) game.getPlayers(), player.getSuper().getType(),
+                        player.getSuper().getId()).update(player);
+            for (Unit unit : reference.getUnitsList())
+                save((Map<String, Reference<Unit>>) (Map<?, ?>) game.getPlayers(), unit.getSuper().getSuper().getType(),
+                        unit.getSuper().getSuper().getId()).update(unit);
+            for (Projectile projectile : reference.getProjectilesList())
+                save((Map<String, Reference<Projectile>>) (Map<?, ?>) game.getPlayers(),
+                        projectile.getSuper().getSuper().getType(),
+                        projectile.getSuper().getSuper().getId()).update(projectile);
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> Reference<T> save(Map<String, Reference<T>> map, String type, String id) {
+            Reference<T> reference = map.get(id);
+            if ((reference = map.get(id)) == null) {
+                Reference<T> newValue;
+                if ((newValue = (Reference<T>) getCreators().get(type)) != null) {
+                    map.put(id, newValue);
+                    return newValue;
+                }
             }
+            return reference;
+        }
+
+        @Override
+        public Reference<?> save(String type, String id) {
+            return null;
+        }
+
+        @Override
+        public Map<String, Creator<Reference<?>>> getCreators() {
+            return creators;
         }
     };
 
+    private final NemesisStoreHelper helper = new NemesisStoreHelper();
+
+    private transient String token = "";
+
     public void status() {
-        nemesisBlockingStub.status(StatusRequest.newBuilder().build());
+        getHelper().update(nemesisBlockingStub.status(StatusRequest.newBuilder().setToken(token).build()));
     }
 
-    public void command() {
-        nemesisBlockingStub.change(ChangeRequest.newBuilder().build());
+    public void change() {
+        nemesisBlockingStub.change(ChangeRequest.newBuilder().setToken(token).build());
     }
 
-    public StoreHelper<Reference<?>, StatusResponse> getHelper() {
+    public void join() {
+        hostingBlockingStub.join(JoinRequest.newBuilder().build());
+    }
+
+    public long ping() {
+        long now = System.currentTimeMillis();
+        return hostingBlockingStub.ping(PingRequest.newBuilder().build()).getPing() - now;
+    }
+
+    public Game getGame() {
+        return game;
+    }
+
+    public NemesisStoreHelper getHelper() {
         return helper;
     }
 }

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+import "com/karlz/entity/kinetic.proto";
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "com.karlz.grpc.game";
+
+message Unit {
+    Kinetic super = 1;
+    string player_id = 2;
+    double speed = 3;
+    double hit_points = 4;
+    double shields = 5;
+    double armor = 6;
+}

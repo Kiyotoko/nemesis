@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+import "com/karlz/game/party.proto";
+import "com/karlz/game/player.proto";
+import "com/karlz/game/unit.proto";
+import "com/karlz/game/projectile.proto";
+import "com/karlz/exchange/observable.proto";
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "com.karlz.grpc.game";
+option java_outer_classname = "NemesisProto";
+option objc_class_prefix = "API";
+
+service Nemesis {
+    rpc Status(StatusRequest) returns (StatusResponse);
+    rpc Change(ChangeRequest) returns (ChangeResponse);
+}
+
+message StatusRequest {
+    string token = 1;
+}
+
+message StatusResponse {
+    repeated Party parties = 1;
+    repeated Player players = 2;
+    repeated Unit units = 3;
+    repeated Projectile projectiles = 5;
+
+    repeated Observable destroyed = 1024;
+}
+
+message ChangeRequest {
+    string token = 1;
+}
+
+message ChangeResponse {
+    string message = 1;
+
+}

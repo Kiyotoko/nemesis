@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+import "com/karlz/bounds/vector.proto";
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "com.karlz.grpc.bounds";
+
+message Circle {
+  /*
+   * The center of the circle.
+   */
+  Vector center = 1;
+  /*
+   * The radius of the circle
+   */
+  double radius = 2;
+}

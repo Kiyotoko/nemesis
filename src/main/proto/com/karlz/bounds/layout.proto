@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "com/karlz/bounds/vector.proto";
+import "com/karlz/exchange/observable.proto";
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "com.karlz.grpc.bounds";
+
+message Layout {
+  Observable layout = 1;
+  Observable parent = 2;
+  Vector position = 3;
+  double rotation = 4;
+}

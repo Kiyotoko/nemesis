@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "com.karlz.grpc.entity";
+
+message Observable {
+  string id = 1;
+  string type = 2;
+}

@@ -1,88 +1,65 @@
 package org.nemesis.grpc;
 
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.nemesis.grpc.NemesisGrpc.NemesisBlockingStub;
+import com.karlz.entity.Creator;
+import com.karlz.exchange.ExchangeHelper.StoreHelper;
+import com.karlz.exchange.Reference;
+import com.karlz.grpc.exchange.HostingGrpc;
+import com.karlz.grpc.exchange.HostingGrpc.HostingBlockingStub;
+import com.karlz.grpc.game.ChangeRequest;
+import com.karlz.grpc.game.NemesisGrpc;
+import com.karlz.grpc.game.NemesisGrpc.NemesisBlockingStub;
+import com.karlz.grpc.game.Party;
+import com.karlz.grpc.game.StatusRequest;
+import com.karlz.grpc.game.StatusResponse;
 
-import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 public class NemesisClient {
-    private static final Logger logger = Logger.getLogger(NemesisClient.class.getName());
-
     private final ManagedChannel channel;
-    private final NemesisBlockingStub blockingStub;
+    private final NemesisBlockingStub nemesisBlockingStub;
+    private final HostingBlockingStub hostingBlockingStub;
 
-    public NemesisClient(int port) {
-        channel = ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
-        blockingStub = NemesisGrpc.newBlockingStub(channel);
-        logger.info("Client started");
+    public NemesisClient(String name, int port) {
+        channel = ManagedChannelBuilder.forAddress(name, port).build();
+        nemesisBlockingStub = NemesisGrpc.newBlockingStub(channel);
+        hostingBlockingStub = HostingGrpc.newBlockingStub(channel);
     }
 
-    public void stop() throws Exception {
-        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
-        logger.info("Client shutdown");
+    private final StoreHelper<Reference<?>, StatusResponse> helper = new StoreHelper<Reference<?>, StatusResponse>() {
+        private final HashMap<String, Creator<Reference<?>>> creatorsMap = new HashMap<>();
+        private final HashMap<String, Map<String, Reference<?>>> flatMap = new HashMap<>();
+
+        @Override
+        public Map<String, Creator<Reference<?>>> creatorsMap() {
+            return creatorsMap;
+        }
+
+        @Override
+        public Map<String, Map<String, Reference<?>>> flatMap() {
+            return flatMap;
+        }
+
+        @Override
+        public void update(StatusResponse reference) {
+            for (Party observable : reference.getPartiesList()) {
+                save(observable.getSuper().getType(), observable.getSuper().getId());
+            }
+        }
+    };
+
+    public void status() {
+        nemesisBlockingStub.status(StatusRequest.newBuilder().build());
     }
 
-    public boolean isRunning() {
-        ConnectivityState state = channel.getState(true);
-        if (state == ConnectivityState.IDLE) {
-            return false;
-        }
-        if (state == ConnectivityState.TRANSIENT_FAILURE | state == ConnectivityState.SHUTDOWN) {
-            if (!channel.isShutdown())
-                try {
-                    stop();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            return false;
-        }
-        return true;
+    public void command() {
+        nemesisBlockingStub.change(ChangeRequest.newBuilder().build());
     }
 
-    private String username = "", token = "";
-
-    public JoinReply joinGame(String password) {
-        if (!isRunning()) {
-            return JoinReply.newBuilder().build();
-        }
-        return blockingStub.joinGame(JoinRequest.newBuilder().setUsername(username).setPassword(password).build());
-    }
-
-    public StatusReply gameStatus() {
-        if (!isRunning()) {
-            return StatusReply.newBuilder().build();
-        }
-        return blockingStub.gameStatus(StatusRequest.newBuilder().setUsername(token).setToken(token).build());
-    }
-
-    public ChangeReply changeEconomy(String location, boolean upgraded, boolean destroyed) {
-        if (!isRunning()) {
-            return ChangeReply.newBuilder().build();
-        }
-        return blockingStub.changeEconomy(ChangeEconomyRequest.newBuilder().setUsername(token).setToken(token)
-                .setLocation(location).setUpgrad(upgraded)
-                .setDestroy(destroyed).build());
-    }
-
-    public ChangeReply changeMilitary(String location, String destination, boolean upgraded, boolean destroyed) {
-        if (!isRunning()) {
-            return ChangeReply.newBuilder().build();
-        }
-        return blockingStub.changeMilitary(ChangeMilitaryRequest.newBuilder().setUsername(token).setToken(token)
-                .setLocation(location).setUpgrad(upgraded)
-                .setDestroy(destroyed).build());
-    }
-
-    public ChangeReply changeDevense(String location, boolean upgraded, boolean destroyed) {
-        if (!isRunning()) {
-            return ChangeReply.newBuilder().build();
-        }
-        return blockingStub.changeDevense(ChangeDevenseRequest.newBuilder().setUsername(token).setToken(token)
-                .setLocation(location).setUpgrad(upgraded)
-                .setDestroy(destroyed).build());
+    public StoreHelper<Reference<?>, StatusResponse> getHelper() {
+        return helper;
     }
 }

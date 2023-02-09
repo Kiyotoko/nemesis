@@ -1,38 +1,49 @@
 package org.nemesis.game;
 
-import org.nemesis.grpc.Corresponding;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Player implements Entity, Corresponding<org.nemesis.grpc.Player> {
+import com.google.type.Color;
+import com.karlz.entity.Children;
+import com.karlz.entity.Parent;
+import com.karlz.exchange.Observable;
 
-    public static final Player UNOCCUPIED = new Player() {
-        @Override
-        public String getId() {
-            return "";
-        }
+public class Player implements Parent, Children, Observable {
+	private final List<Unit> units = new ArrayList<>();
 
-        @Override
-        public String toString() {
-            return "unoccupied";
-        }
-    };
+	private final Party party;
+	private final Color color;
 
-    @Override
-    public void update(double deltaT) {
+	public Player(Party party, Color color) {
+		this.party = party;
+		this.color = color;
+		party.getPlayers().add(this);
+	}
 
-    }
+	@Override
+	public void changed() {
 
-    transient String hash;
+	}
 
-    @Override
-    public String getId() {
-        if (hash == null)
-            hash = Integer.toHexString(hashCode());
-        return hash;
-    }
+	public List<Unit> getUnits() {
+		return units;
+	}
 
-    @Override
-    public org.nemesis.grpc.Player associated() {
-        return org.nemesis.grpc.Player.newBuilder().build();
-    }
+	public Party getParty() {
+		return party;
+	}
 
+	public Color getColor() {
+		return color;
+	}
+
+	@Override
+	public Party getParent() {
+		return party;
+	}
+
+	@Override
+	public List<Unit> getChildren() {
+		return units;
+	}
 }

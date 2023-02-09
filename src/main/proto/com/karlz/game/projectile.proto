@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+import "com/karlz/entity/kinetic.proto";
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "com.karlz.grpc.game";
+
+message Projectile {
+    Kinetic super = 1;
+    string player_id = 2;
+    double speed = 3;
+    double range = 4;
+    double damage = 5;
+    double critical_damage = 6;
+    double critical_chance = 7;
+}

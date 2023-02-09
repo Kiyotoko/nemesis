@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+import "com/karlz/exchange/observable.proto";
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "com.karlz.grpc.game";
+
+message Player {
+    Observable super = 1;
+    repeated string unit_ids = 2;
+}

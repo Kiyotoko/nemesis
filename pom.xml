@@ -4,11 +4,11 @@
 	<artifactId>nemesis</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Nemesis</name>
-
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.mainClass>org.nemesis.Launcher</project.mainClass>
 		<project.javaVersion>17</project.javaVersion>
+		<protobuf.version>3.5.1</protobuf.version>
 		<grpc.version>1.49.2</grpc.version>
 		<javafx.version>19</javafx.version>
 		<javafx.maven.plugin.version>0.0.6</javafx.maven.plugin.version>
@@ -16,7 +16,12 @@
 		<maven.compiler.target>${project.javaVersion}</maven.compiler.target>
 		<maven.compiler.release>${project.javaVersion}</maven.compiler.release>
 	</properties>
-
+	<repositories>
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>org.openjfx</groupId>
@@ -49,6 +54,11 @@
 			<version>${javafx.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.10</version>
+		</dependency>
+		<dependency>
 			<groupId>io.grpc</groupId>
 			<artifactId>grpc-netty-shaded</artifactId>
 			<version>${grpc.version}</version>
@@ -65,6 +75,16 @@
 			<version>${grpc.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>com.github.karl-zschiebsch</groupId>
+			<artifactId>util</artifactId>
+			<version>841631c</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+			<version>2.14.1</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.tomcat</groupId>
 			<artifactId>annotations-api</artifactId>
 			<version>6.0.53</version>
@@ -76,8 +96,13 @@
 			<version>5.9.1</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-params</artifactId>
+			<version>5.9.1</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
-
 	<build>
 		<extensions>
 			<extension>
@@ -215,7 +240,7 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<mainClass>${project.mainClass}</mainClass>
-							<packageName>nemesis</packageName>
+							<packageName>dionysius</packageName>
 						</manifest>
 					</archive>
 				</configuration>

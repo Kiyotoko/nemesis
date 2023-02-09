@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "com.karlz.grpc.exchange";
+option java_outer_classname = "HostingProto";
+option objc_class_prefix = "API";
+
+service Hosting {
+    rpc List(ListRequest) returns (ListResponse);
+    rpc Host(HostRequest) returns (HostResponse);
+    rpc Join(JoinRequest) returns (JoinResponse);
+    rpc Ping(PingRequest) returns (PingResponse);
+}
+
+message Game {
+    string id = 1;
+    string name = 2;
+    string map = 3;
+    int32 current_players = 4;
+    int32 max_players = 5;
+    bool started = 6;
+    bool running = 7;
+    string address = 8;
+    int64 port = 9;
+}
+
+message ListRequest {
+
+}
+
+message ListResponse {
+    repeated Game games = 1;
+}
+
+message HostRequest {
+    Game game = 1;
+}
+
+message HostResponse {
+    string token = 1;
+}
+
+message JoinRequest {
+    string message = 1;
+    map<string, google.protobuf.Any> details = 2;
+}
+
+message JoinResponse {
+    string token = 1;
+}
+
+message PingRequest {
+
+}
+
+message PingResponse {
+    sint64 ping = 1;
+}

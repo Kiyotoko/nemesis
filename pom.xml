@@ -77,7 +77,7 @@
 		<dependency>
 			<groupId>com.github.karl-zschiebsch</groupId>
 			<artifactId>util</artifactId>
-			<version>4375935</version>
+			<version>1c8d686</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>

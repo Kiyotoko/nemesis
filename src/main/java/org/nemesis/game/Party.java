@@ -14,6 +14,7 @@ public class Party implements Parent, Children, Observable {
 
     public Party(Game game) {
         this.game = game;
+        game.getParties().add(this);
     }
 
     @Override

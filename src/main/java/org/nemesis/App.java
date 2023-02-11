@@ -37,7 +37,7 @@ public class App extends Application {
 
 	@Override
 	public void start(Stage stage) throws Exception {
-		Scene scene = new Scene(client.getGame(), 786, 786);
+		Scene scene = new Scene(client.getGame(), 860, 680);
 
 		stage.setOnCloseRequest(c -> {
 			server.stop();

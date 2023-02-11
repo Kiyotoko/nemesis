@@ -9,4 +9,6 @@ option java_package = "com.karlz.grpc.game";
 message Player {
     Observable super = 1;
     repeated string unit_ids = 2;
+    string web_color = 3;
+    string user_name = 4;
 }

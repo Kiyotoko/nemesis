@@ -7,6 +7,7 @@ import org.nemesis.graphic.Game;
 import com.karlz.entity.Creator;
 import com.karlz.exchange.ExchangeHelper.StoreHelper;
 import com.karlz.exchange.Reference;
+import com.karlz.grpc.bounds.Vector;
 import com.karlz.grpc.exchange.HostingGrpc;
 import com.karlz.grpc.exchange.HostingGrpc.HostingBlockingStub;
 import com.karlz.grpc.exchange.JoinRequest;
@@ -21,108 +22,121 @@ import com.karlz.grpc.game.StatusRequest;
 import com.karlz.grpc.game.StatusResponse;
 import com.karlz.grpc.game.Unit;
 
+import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import javafx.geometry.Point2D;
 
 public class NemesisClient {
-	private final ManagedChannel channel;
-	private final NemesisBlockingStub nemesisBlockingStub;
-	private final HostingBlockingStub hostingBlockingStub;
+    private final ManagedChannel channel;
+    private final NemesisBlockingStub nemesisBlockingStub;
+    private final HostingBlockingStub hostingBlockingStub;
 
-	public NemesisClient(String name, int port) {
-		channel = ManagedChannelBuilder.forAddress(name, port).usePlaintext().build();
-		nemesisBlockingStub = NemesisGrpc.newBlockingStub(channel);
-		hostingBlockingStub = HostingGrpc.newBlockingStub(channel);
-	}
+    public NemesisClient(String name, int port) {
+        channel = ManagedChannelBuilder.forAddress(name, port).usePlaintext().build();
+        nemesisBlockingStub = NemesisGrpc.newBlockingStub(channel);
+        hostingBlockingStub = HostingGrpc.newBlockingStub(channel);
+    }
 
-	public void start() {
-		join();
-	}
+    public void start() {
+        join();
+    }
 
-	public void stop() {
-		channel.shutdown();
-	}
+    public void stop() {
+        channel.shutdown();
+    }
 
-	private final Game game = new Game();
+    private final Game game = new Game(this);
 
-	public class NemesisStoreHelper implements StoreHelper<Reference<?>, StatusResponse> {
-		private Map<String, Creator<Reference<?>>> creators = Map.of( //
-				"Party", () -> new org.nemesis.graphic.Party(getGame()), //
-				"Player", () -> new org.nemesis.graphic.Player(getGame()), //
-				"Unit", () -> new org.nemesis.graphic.Unit(getGame()), //
-				"Projectile", () -> new org.nemesis.graphic.Projectile(getGame()) //
-		);
+    public class NemesisStoreHelper implements StoreHelper<Reference<?>, StatusResponse> {
+        private final Map<String, Creator<? extends Reference<?>>> creators = Map.of( //
+                "Party", () -> new org.nemesis.graphic.Party(getGame()), //
+                "Player", () -> new org.nemesis.graphic.Player(getGame()), //
+                "Unit", () -> new org.nemesis.graphic.Unit(getGame()), //
+                "Projectile", () -> new org.nemesis.graphic.Projectile(getGame()) //
+        );
 
-		@SuppressWarnings("unchecked")
-		@Override
-		public void update(StatusResponse reference) {
-			for (Party party : reference.getPartiesList())
-				save((Map<String, Reference<Party>>) (Map<?, ?>) game.getParties(), party.getSuper().getType(),
-						party.getSuper().getId()).update(party);
-			for (Player player : reference.getPlayersList())
-				save((Map<String, Reference<Player>>) (Map<?, ?>) game.getPlayers(), player.getSuper().getType(),
-						player.getSuper().getId()).update(player);
-			for (Unit unit : reference.getUnitsList())
-				save((Map<String, Reference<Unit>>) (Map<?, ?>) game.getPlayers(), unit.getSuper().getSuper().getType(),
-						unit.getSuper().getSuper().getId()).update(unit);
-			for (Projectile projectile : reference.getProjectilesList())
-				save((Map<String, Reference<Projectile>>) (Map<?, ?>) game.getPlayers(),
-						projectile.getSuper().getSuper().getType(), projectile.getSuper().getSuper().getId())
-						.update(projectile);
-		}
+        private final Map<String, Map<String, ? extends Reference<?>>> container = Map.of( //
+                "Party", game.getParties(), //
+                "Player", game.getPlayers(), //
+                "Unit", game.getUnits(), //
+                "Projectile", game.getProjectiles() //
+        );
 
-		@SuppressWarnings("unchecked")
-		public <T> Reference<T> save(Map<String, Reference<T>> map, String type, String id) {
-			Reference<T> reference = map.get(id);
-			if ((reference = map.get(id)) == null) {
-				Reference<T> newValue;
-				if ((newValue = (Reference<T>) getCreators().get(type).create()) != null) {
-					map.put(id, newValue);
-					return newValue;
-				}
-			}
-			return reference;
-		}
+        @SuppressWarnings("unchecked")
+        @Override
+        public void update(StatusResponse reference) {
+            for (Party party : reference.getPartiesList())
+                ((Reference<Party>) save((Map<String, Reference<?>>) (Map<?, ?>) game.getParties(),
+                        party.getSuper().getType(),
+                        party.getSuper().getId())).update(party);
+            for (Player player : reference.getPlayersList())
+                ((Reference<Player>) save((Map<String, Reference<?>>) (Map<?, ?>) game.getPlayers(),
+                        player.getSuper().getType(),
+                        player.getSuper().getId())).update(player);
+            for (Unit unit : reference.getUnitsList())
+                ((Reference<Unit>) save((Map<String, Reference<?>>) (Map<?, ?>) game.getUnits(),
+                        unit.getSuper().getSuper().getType(),
+                        unit.getSuper().getSuper().getId())).update(unit);
+            for (Projectile projectile : reference.getProjectilesList())
+                ((Reference<Projectile>) save((Map<String, Reference<?>>) (Map<?, ?>) game.getProjectiles(),
+                        projectile.getSuper().getSuper().getType(), projectile.getSuper().getSuper().getId()))
+                        .update(projectile);
+        }
 
-		@Override
-		public Reference<?> save(String type, String id) {
-			return null;
-		}
+        @Override
+        public Reference<?> save(Map<String, Reference<?>> map, String type, String id) {
+            Reference<?> reference = map.get(id);
+            if ((reference = map.get(id)) == null) {
+                Reference<?> newValue;
+                if ((newValue = getCreators().get(type).create()) != null) {
+                    map.put(id, newValue);
+                    return newValue;
+                }
+            }
+            return reference;
+        }
 
-		@Override
-		public Map<String, Creator<Reference<?>>> getCreators() {
-			return creators;
-		}
-	};
+        @Override
+        public Map<String, Map<String, ? extends Reference<?>>> getContainer() {
+            return container;
+        }
 
-	private final NemesisStoreHelper helper = new NemesisStoreHelper();
+        @Override
+        public Map<String, Creator<? extends Reference<?>>> getCreators() {
+            return creators;
+        }
+    };
 
-	private transient String token = "";
+    private final NemesisStoreHelper helper = new NemesisStoreHelper();
 
-	public void status() {
-		getHelper().update(nemesisBlockingStub.status(StatusRequest.newBuilder().setToken(token).build()));
-	}
+    private transient String token = "";
 
-	public void change() {
-		nemesisBlockingStub.change(ChangeRequest.newBuilder().setToken(token).build());
-	}
+    public void status() {
+        if (channel.getState(true).equals(ConnectivityState.READY))
+            getHelper().update(nemesisBlockingStub.status(StatusRequest.newBuilder().setToken(token).build()));
+    }
 
-	public void join() {
-		if (token.isBlank())
-			token = hostingBlockingStub.join(JoinRequest.newBuilder().build()).getToken();
-		System.err.println("**JOINED GAME**");
-	}
+    public void change(String unitId, Point2D destiantion) {
+        nemesisBlockingStub.change(ChangeRequest.newBuilder().setToken(token).setUnitId(unitId)
+                .setDestination(Vector.newBuilder().setX(destiantion.getX()).setY(destiantion.getY()).build()).build());
+    }
 
-	public long ping() {
-		long now = System.currentTimeMillis();
-		return hostingBlockingStub.ping(PingRequest.newBuilder().build()).getPing() - now;
-	}
+    public void join() {
+        if (token.isBlank())
+            token = hostingBlockingStub.join(JoinRequest.newBuilder().build()).getToken();
+    }
 
-	public Game getGame() {
-		return game;
-	}
+    public long ping() {
+        long now = System.currentTimeMillis();
+        return hostingBlockingStub.ping(PingRequest.newBuilder().build()).getPing() - now;
+    }
 
-	public NemesisStoreHelper getHelper() {
-		return helper;
-	}
+    public Game getGame() {
+        return game;
+    }
+
+    public NemesisStoreHelper getHelper() {
+        return helper;
+    }
 }

@@ -1,5 +1,7 @@
 package org.nemesis.game;
 
+import javax.annotation.Nonnull;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.karlz.bounds.Layout;
 import com.karlz.bounds.Vector;
@@ -27,7 +29,7 @@ public class Projectile extends Kinetic {
             setPosition(cur.add(dif));
         } else
             setPosition(cur.add(dif));
-        getLayout().setRotation(Math.atan2(dif.getX(), dif.getY()));
+        getLayout().setRotation(-Math.atan2(dif.getX(), dif.getY()));
     }
 
     private void hit(Unit unit) {
@@ -45,6 +47,7 @@ public class Projectile extends Kinetic {
     }
 
     @Override
+    @Nonnull
     public Vector getAcceleration() {
         return super.getAcceleration().multiply(getSpeed());
     }

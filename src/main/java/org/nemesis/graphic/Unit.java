@@ -8,16 +8,17 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.layout.Pane;
-import javafx.scene.shape.Circle;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Polygon;
 
 public class Unit extends Pane implements Reference<com.karlz.grpc.game.Unit> {
-
     private final Game game;
 
-    private Circle model = new Circle(20); // TODO
+    private Polygon model = new Polygon(0, -20, 10, 20, -10, 20); // TODO
 
     public Unit(Game game) {
         this.game = game;
+        model.setFill(Color.gray(.4));
         getChildren().add(model);
     }
 
@@ -39,7 +40,7 @@ public class Unit extends Pane implements Reference<com.karlz.grpc.game.Unit> {
 
         setLayoutX(kinetic.getPosition().getX());
         setLayoutY(kinetic.getPosition().getY());
-        setRotate(kinetic.getRotation());
+        setRotate(Math.toDegrees(kinetic.getRotation()) + 90);
     }
 
     public Game getGame() {

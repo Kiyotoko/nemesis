@@ -1,5 +1,9 @@
 package org.nemesis.game;
 
+import javax.annotation.Nonnull;
+
+import org.nemesis.grpc.NemesisServer.NemesisDispatchHelper;
+
 import com.google.protobuf.Message;
 import com.karlz.bounds.Layout;
 import com.karlz.bounds.Vector;
@@ -12,13 +16,51 @@ public class Unit extends Kinetic {
     public Unit(Player player, Layout layout, double mass) {
         super(player.getParty().getParent(), layout, mass);
         player.getParty().getParent().getUnits().add(this);
+        player.getControllerTargets().put(getId(), this);
         player.getUnits().add(this);
         this.player = player;
     }
 
     @Override
+    public void update(double deltaT) {
+        super.update(deltaT);
+        changed();
+    }
+
+    protected void changed() {
+        for (NemesisDispatchHelper helper : ((Game) getParent()).getDispatchers().values()) {
+            helper.getUnits().add(this);
+        }
+    }
+
+    @Override
+    protected void accelerate(double deltaT) {
+    }
+
+    @Override
+    protected void velocitate(double deltaT) {
+    }
+
+    @Override
+    protected void displacement(double deltaT) {
+        Vector dif = getDestination().subtract(getPosition());
+        if (dif.magnitude() > 3) {
+            double alpha = getRotation() + Math.signum(Math.atan2(dif.getY(), dif.getX()) - getRotation()) * deltaT;
+            Vector next = getPosition().add(new Vector(Math.cos(alpha), Math.sin(alpha)));
+
+            if (world != null) {
+                if (world.isInside(next))
+                    setPosition(next);
+            } else
+                setPosition(next);
+            getLayout().setRotation(alpha);
+        }
+    }
+
+    @Override
     public void destroy() {
         super.destroy();
+        player.getControllerTargets().remove(getId());
         player.getChildren().remove(this);
     }
 
@@ -30,8 +72,11 @@ public class Unit extends Kinetic {
     }
 
     @Override
+    @Nonnull
     public Vector getAcceleration() {
-        return super.getAcceleration().multiply(getSpeed());
+        Vector dif = getDestination().subtract(getPosition());
+        double theta = Math.atan2(dif.getX(), dif.getY());
+        return new Vector(Math.cos(theta), Math.sin(theta));
     }
 
     public Player getPlayer() {
@@ -63,6 +108,8 @@ public class Unit extends Kinetic {
             hitPoints.addInvalidationListener(e -> {
                 if (e.getNew() <= 0)
                     destroy();
+                else
+                    changed();
             });
         }
         return hitPoints;
@@ -81,6 +128,9 @@ public class Unit extends Kinetic {
     public Property<Double> shieldsProperty() {
         if (shields == null) {
             shields = new Property<Double>(0.);
+            shields.addInvalidationListener(e -> {
+                changed();
+            });
         }
         return shields;
     }
@@ -98,6 +148,9 @@ public class Unit extends Kinetic {
     public Property<Double> armorProperty() {
         if (armor == null) {
             armor = new Property<Double>(1.);
+            armor.addInvalidationListener(e -> {
+                changed();
+            });
         }
         return armor;
     }

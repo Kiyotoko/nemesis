@@ -160,7 +160,7 @@ public class NemesisServer {
     }
 
     protected class HostingService extends HostingImplBase {
-        private static String getNewToken() {
+        private String getNewToken() {
             return Hashing.sha512().hashLong(System.currentTimeMillis()).toString();
         }
 

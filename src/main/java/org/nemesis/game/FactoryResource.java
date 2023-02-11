@@ -6,16 +6,30 @@ import java.io.IOException;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 
+import org.nemesis.game.FactoryResource.ProjectileResource;
+import org.nemesis.game.FactoryResource.UnitResource;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.core.exc.StreamWriteException;
 import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.karlz.bounds.Layout;
 
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({ @Type(value = UnitResource.class, name = "unit_resource"),
+        @Type(value = ProjectileResource.class, name = "projectile_resource") })
+@JsonSerialize
+@JsonDeserialize
 public interface FactoryResource {
-
     @CheckReturnValue
     public static FactoryResource load(@Nonnull File file, @Nonnull Class<? extends FactoryResource> clazz) {
         try {
@@ -42,6 +56,9 @@ public interface FactoryResource {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+    @JsonSerialize
+    @JsonDeserialize
     public static class UnitResource implements FactoryResource {
         @JsonProperty("layout")
         private final Layout layout;
@@ -93,6 +110,9 @@ public interface FactoryResource {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+    @JsonSerialize
+    @JsonDeserialize
     public static class ProjectileResource implements FactoryResource {
         @JsonProperty("layout")
         private final Layout layout;

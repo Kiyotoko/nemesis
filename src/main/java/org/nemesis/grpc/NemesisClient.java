@@ -110,7 +110,7 @@ public class NemesisClient {
 
     private final NemesisStoreHelper helper = new NemesisStoreHelper();
 
-    private transient String token = "";
+    private transient String token = "", playerId = "";
 
     public void status() {
         if (channel.getState(true).equals(ConnectivityState.READY))
@@ -138,5 +138,13 @@ public class NemesisClient {
 
     public NemesisStoreHelper getHelper() {
         return helper;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public String getPlayerId() {
+        return playerId;
     }
 }

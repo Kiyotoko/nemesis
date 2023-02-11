@@ -7,8 +7,12 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.scene.Node;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 
 public class Unit extends Pane implements Reference<com.karlz.grpc.game.Unit> {
@@ -20,6 +24,15 @@ public class Unit extends Pane implements Reference<com.karlz.grpc.game.Unit> {
         this.game = game;
         model.setFill(Color.gray(.4));
         getChildren().add(model);
+        addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                if (game.getSelected().contains(this))
+                    return;
+                if (!e.isShiftDown())
+                    game.getSelected().clear();
+                game.getSelected().add(this);
+            }
+        });
     }
 
     private transient Kinetic kinetic;
@@ -47,6 +60,14 @@ public class Unit extends Pane implements Reference<com.karlz.grpc.game.Unit> {
         return game;
     }
 
+    private Node icon;
+
+    public Node getIcon() {
+        if (icon == null)
+            icon = new Circle(8);
+        return icon;
+    }
+
     public Kinetic getKinetic() {
         return kinetic;
     }
@@ -58,5 +79,4 @@ public class Unit extends Pane implements Reference<com.karlz.grpc.game.Unit> {
     public DoubleProperty getSpeed() {
         return speed;
     }
-
 }

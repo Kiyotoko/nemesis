@@ -1,6 +1,9 @@
 package org.nemesis.game;
 
-import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Nullable;
 
 import org.nemesis.grpc.NemesisServer.NemesisDispatchHelper;
 
@@ -8,10 +11,13 @@ import com.google.protobuf.Message;
 import com.karlz.bounds.Layout;
 import com.karlz.bounds.Vector;
 import com.karlz.entity.Kinetic;
+import com.karlz.entity.Parent;
 import com.karlz.exchange.Property;
 
-public class Unit extends Kinetic {
+public class Unit extends Kinetic implements Parent {
     private final Player player;
+
+    private final List<Modul> moduls = new ArrayList<>();
 
     public Unit(Player player, Layout layout, double mass) {
         super(player.getParty().getParent(), layout, mass);
@@ -23,6 +29,7 @@ public class Unit extends Kinetic {
 
     @Override
     public void update(double deltaT) {
+        Parent.super.update(deltaT);
         super.update(deltaT);
         changed();
     }
@@ -71,24 +78,35 @@ public class Unit extends Kinetic {
                 .setPlayerId(getPlayer().getId()).build();
     }
 
-    @Override
-    @Nonnull
-    public Vector getAcceleration() {
-        Vector dif = getDestination().subtract(getPosition());
-        double theta = Math.atan2(dif.getX(), dif.getY());
-        return new Vector(Math.cos(theta), Math.sin(theta));
-    }
-
     public Player getPlayer() {
         return player;
+    }
+
+    @Override
+    public List<Modul> getChildren() {
+        return moduls;
+    }
+
+    @Nullable
+    private Unit target;
+
+    public boolean hasTarget() {
+        return target != null;
+    }
+
+    public Unit getTarget() {
+        return target;
+    }
+
+    public void setTarget(Unit target) {
+        this.target = target;
     }
 
     private Property<Double> speed;
 
     public Property<Double> speedProperty() {
-        if (speed == null) {
+        if (speed == null)
             speed = new Property<Double>(1.);
-        }
         return speed;
     }
 

@@ -7,7 +7,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.mainClass>org.nemesis.Launcher</project.mainClass>
-		<project.javaVersion>17</project.javaVersion>
+		<project.javaVersion>11</project.javaVersion>
 		<protobuf.version>3.5.1</protobuf.version>
 		<grpc.version>1.49.2</grpc.version>
 		<javafx.version>19</javafx.version>

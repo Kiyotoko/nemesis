@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.shape.*?>
+<?import java.lang.*?>
+<?import javafx.scene.*?>
+
+
+<Group xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <Polygon fill="#383838">
+        <points>
+          <Double fx:value="0.0" />
+          <Double fx:value="-100.0" />
+          <Double fx:value="30.0" />
+          <Double fx:value="-60.0" />
+          <Double fx:value="25.0" />
+          <Double fx:value="-60.0" />
+          <Double fx:value="28.75" />
+          <Double fx:value="-55.0" />
+          <Double fx:value="33.75" />
+          <Double fx:value="-55.0" />
+          <Double fx:value="63.75" />
+          <Double fx:value="-15.0" />
+          <Double fx:value="20.0" />
+          <Double fx:value="20.0" />
+          <Double fx:value="0.0" />
+          <Double fx:value="100.0" />
+          <Double fx:value="-20.0" />
+          <Double fx:value="20.0" />
+          <Double fx:value="-63.75" />
+          <Double fx:value="-15.0" />
+          <Double fx:value="-33.75" />
+          <Double fx:value="-55.0" />
+          <Double fx:value="-28.75" />
+          <Double fx:value="-55.0" />
+          <Double fx:value="-25.0" />
+          <Double fx:value="-60.0" />
+          <Double fx:value="-30.0" />
+          <Double fx:value="-60.0" />
+        </points>
+      </Polygon>
+   </children>
+</Group>

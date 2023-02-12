@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.karlz.bounds.Bounds.Polygon;
-import com.karlz.bounds.Layout;
 import com.karlz.bounds.Vector;
 import com.karlz.entity.Children;
 import com.karlz.entity.Parent;
@@ -26,8 +24,10 @@ public class Player implements Parent, Children, Observable {
 
     public Player(Party party) {
         this.party = party;
-        new Unit(this, new Layout(new Polygon(List.of(new Vector(0, -20), new Vector(10, 20), new Vector(-10, 20),
-                new Vector(100, 100))), Vector.ZERO, 0), 10).setDestination(new Vector(300, 300)); // TODO
+//        new Unit(this, new Layout(new Polygon(List.of(new Vector(0, -20), new Vector(10, 20), new Vector(-10, 20),
+//                new Vector(100, 100))), Vector.ZERO, 0), 10).setDestination(new Vector(300, 300)); // TODO
+        ResourceLoader.DEFAULT_RESOURCE_LOADER.getUnitFactories().get("ProviderClass").apply(this)
+                .setPosition(new Vector(100, 100));
         party.getParent().getPlayers().add(this);
         party.getPlayers().add(this);
     }

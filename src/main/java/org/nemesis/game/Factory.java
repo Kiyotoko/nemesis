@@ -11,19 +11,26 @@ import org.nemesis.game.FactoryResource.UnitResource;
 public abstract class Factory<I, O> implements Function<I, O> {
     private final FactoryResource resource;
 
-    public Factory(@Nonnull Class<? extends FactoryResource> clazz, String source) {
-        resource = FactoryResource.load(new File(source), clazz);
+    public Factory(@Nonnull File source, @Nonnull Class<? extends FactoryResource> clazz) {
+        resource = FactoryResource.load(source, clazz);
     }
 
     public static class UnitFactory extends Factory<Player, Unit> {
-        public UnitFactory(String source) {
-            super(UnitResource.class, source);
+        public UnitFactory(@Nonnull File source) {
+            super(source, UnitResource.class);
         }
 
         @Override
         public Unit apply(Player t) {
             UnitResource resource = (UnitResource) getResource();
-            Unit unit = new Unit(t, resource.getLayout(), resource.getMass());
+            Unit unit = new Unit(t, resource.getLayout().clone(), resource.getMass()) {
+                @Override
+                public String getType() {
+                    return resource.getModel();
+                }
+            };
+            for (Modul modul : resource.getModuls())
+                modul.clone().bindUnit(unit);
             unit.setHitPoints(resource.getHitPoints());
             unit.setArmor(resource.getArmor());
             unit.setShields(resource.getShields());
@@ -32,14 +39,15 @@ public abstract class Factory<I, O> implements Function<I, O> {
     }
 
     public static class ProjectileFactory extends Factory<Unit, Projectile> {
-        public ProjectileFactory(String source) {
-            super(ProjectileResource.class, source);
+        public ProjectileFactory(@Nonnull File source) {
+            super(source, ProjectileResource.class);
         }
 
         @Override
         public Projectile apply(Unit t) {
             ProjectileResource resource = (ProjectileResource) getResource();
-            Projectile projectile = new Projectile(t.getPlayer().getParty(), resource.getLayout(), resource.getMass());
+            Projectile projectile = new Projectile(t.getPlayer().getParty(), resource.getLayout().clone(),
+                    resource.getMass());
             projectile.setPosition(t.getPosition());
             projectile.setSpeed(resource.getSpeed());
             projectile.setRange(resource.getRange());

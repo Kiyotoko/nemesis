@@ -1,0 +1,88 @@
+{
+    "type": "UnitResource",
+    "layout": {
+        "type": "Layout",
+        "local": {
+            "type": "Polygon",
+            "points": [
+                {
+                    "x": 0.0,
+                    "y": -20.0
+                },
+                {
+                    "x": 10.0,
+                    "y": 20.0
+                },
+                {
+                    "x": 10.0,
+                    "y": -20.0
+                }
+            ],
+            "minX": 0.0,
+            "minY": -20.0,
+            "maxX": 10.0,
+            "maxY": 20.0
+        },
+        "position": {
+            "x": 0.0,
+            "y": 0.0
+        },
+        "rotation": 0.0
+    },
+    "moduls": [
+        {
+            "type": "Engine",
+            "acceleration": 0.05,
+            "power": 5.0
+        },
+        {
+            "type": "Engine",
+            "acceleration": 0.05,
+            "power": 5.0
+        },
+        {
+            "type": "Engine",
+            "acceleration": 0.05,
+            "power": 5.0
+        },
+        {
+            "type": "ShieldGenerator",
+            "buildUp": 4.0,
+            "power": 200.0
+        },
+        {
+            "type": "Weapon",
+            "projectileType": "LaserBeam",
+            "cooldown": 1.2,
+            "fireRate": 0.4,
+            "salveLength": 5
+        },
+        {
+            "type": "Weapon",
+            "projectileType": "LaserBeam",
+            "cooldown": 1.2,
+            "fireRate": 0.4,
+            "salveLength": 5
+        },
+        {
+            "type": "Weapon",
+            "projectileType": "LaserBeam",
+            "cooldown": 4.0,
+            "fireRate": 0.6,
+            "salveLength": 4
+        },
+        {
+            "type": "Weapon",
+            "projectileType": "LaserBeam",
+            "cooldown": 4.0,
+            "fireRate": 0.6,
+            "salveLength": 4
+        }
+    ],
+    "model": "DevastatorClass",
+    "speed": 1.0,
+    "hitPoints": 200.0,
+    "shields": 200.0,
+    "armor": 2.0,
+    "mass": 20.0
+}

@@ -39,20 +39,20 @@ public class Game extends BorderPane {
         projectiles.addListener(getGraphicListener(down));
         getChildren().add(down);
 
-        VBox left = new VBox();
+        VBox left = new VBox(2);
         parties.addListener(getGraphicListener(left));
         setLeft(left);
 
-        VBox right = new VBox();
+        VBox right = new VBox(2);
         players.addListener(getGraphicListener(right));
         setRight(right);
 
-        HBox bottom = new HBox();
+        HBox bottom = new HBox(2);
         selected.addListener((Change<? extends Unit> change) -> {
             if (change.wasAdded())
                 bottom.getChildren().add(change.getElementAdded().getIcon());
             if (change.wasRemoved())
-                bottom.getChildren().add(change.getElementRemoved().getIcon());
+                bottom.getChildren().remove(change.getElementRemoved().getIcon());
         });
         setPadding(new Insets(20));
         setBottom(bottom);

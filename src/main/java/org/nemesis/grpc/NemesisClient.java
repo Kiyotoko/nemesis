@@ -68,20 +68,16 @@ public class NemesisClient {
         public void update(StatusResponse reference) {
             for (Party party : reference.getPartiesList())
                 ((Reference<Party>) save((Map<String, Reference<?>>) (Map<?, ?>) game.getParties(),
-                        party.getSuper().getType(),
-                        party.getSuper().getId())).update(party);
+                        "Party", party.getSuper().getId())).update(party);
             for (Player player : reference.getPlayersList())
                 ((Reference<Player>) save((Map<String, Reference<?>>) (Map<?, ?>) game.getPlayers(),
-                        player.getSuper().getType(),
-                        player.getSuper().getId())).update(player);
+                        "Player", player.getSuper().getId())).update(player);
             for (Unit unit : reference.getUnitsList())
                 ((Reference<Unit>) save((Map<String, Reference<?>>) (Map<?, ?>) game.getUnits(),
-                        unit.getSuper().getSuper().getType(),
-                        unit.getSuper().getSuper().getId())).update(unit);
+                        "Unit", unit.getSuper().getSuper().getId())).update(unit);
             for (Projectile projectile : reference.getProjectilesList())
                 ((Reference<Projectile>) save((Map<String, Reference<?>>) (Map<?, ?>) game.getProjectiles(),
-                        projectile.getSuper().getSuper().getType(), projectile.getSuper().getSuper().getId()))
-                        .update(projectile);
+                        "Projectile", projectile.getSuper().getSuper().getId())).update(projectile);
         }
 
         @Override

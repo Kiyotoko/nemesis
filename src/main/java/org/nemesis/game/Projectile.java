@@ -32,7 +32,7 @@ public class Projectile extends Kinetic {
         getLayout().setRotation(-Math.atan2(dif.getX(), dif.getY()));
     }
 
-    private void hit(Unit unit) {
+    protected void hit(Unit unit) {
         double damage = getDamage() + (int) (Math.random() + getCriticalChance()) * getCriticalDamage();
         unit.setHitPoints(unit.getHitPoints() - Math.max(damage - unit.getShields(), 0) / unit.getArmor());
         unit.setShields(Math.max(unit.getShields() - damage, 0));

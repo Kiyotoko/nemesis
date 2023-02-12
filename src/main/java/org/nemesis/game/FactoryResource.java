@@ -2,6 +2,7 @@ package org.nemesis.game;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -25,13 +26,13 @@ import com.karlz.bounds.Layout;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes({ @Type(value = UnitResource.class, name = "unit_resource"),
-        @Type(value = ProjectileResource.class, name = "projectile_resource") })
+@JsonSubTypes({ @Type(value = UnitResource.class, name = "UnitResource"),
+        @Type(value = ProjectileResource.class, name = "ProjectileResource") })
 @JsonSerialize
 @JsonDeserialize
 public interface FactoryResource {
     @CheckReturnValue
-    public static FactoryResource load(@Nonnull File file, @Nonnull Class<? extends FactoryResource> clazz) {
+    public static <T extends FactoryResource> T load(@Nonnull File file, @Nonnull Class<T> clazz) {
         try {
             return new JsonMapper().readValue(file, clazz);
         } catch (StreamReadException e) {
@@ -62,6 +63,11 @@ public interface FactoryResource {
     public static class UnitResource implements FactoryResource {
         @JsonProperty("layout")
         private final Layout layout;
+        @JsonProperty("moduls")
+        private final List<Modul> moduls;
+        @JsonProperty("model")
+        private final String model;
+        @JsonProperty("speed")
         private final double speed;
         @JsonProperty("hitPoints")
         private final double hitPoints;
@@ -73,11 +79,13 @@ public interface FactoryResource {
         private final double mass;
 
         @JsonCreator
-        public UnitResource(@JsonProperty("layout") Layout layout, @JsonProperty("speed") double speed,
-                @JsonProperty("hitPoints") double hitPoints,
-                @JsonProperty("shields") double shields, @JsonProperty("armor") double armor,
-                @JsonProperty("mass") double mass) {
+        public UnitResource(@JsonProperty("layout") Layout layout, @JsonProperty("moduls") List<Modul> moduls,
+                @JsonProperty("model") String model, @JsonProperty("speed") double speed,
+                @JsonProperty("hitPoints") double hitPoints, @JsonProperty("shields") double shields,
+                @JsonProperty("armor") double armor, @JsonProperty("mass") double mass) {
             this.layout = layout;
+            this.moduls = moduls;
+            this.model = model;
             this.speed = speed;
             this.shields = shields;
             this.hitPoints = hitPoints;
@@ -87,6 +95,14 @@ public interface FactoryResource {
 
         public Layout getLayout() {
             return layout;
+        }
+
+        public List<Modul> getModuls() {
+            return moduls;
+        }
+
+        public String getModel() {
+            return model;
         }
 
         public double getSpeed() {
@@ -116,6 +132,8 @@ public interface FactoryResource {
     public static class ProjectileResource implements FactoryResource {
         @JsonProperty("layout")
         private final Layout layout;
+        @JsonProperty("model")
+        private final String model;
         @JsonProperty("speed")
         private final double speed;
         @JsonProperty("range")
@@ -129,11 +147,12 @@ public interface FactoryResource {
         @JsonProperty("mass")
         private final double mass;
 
-        public ProjectileResource(@JsonProperty("layout") Layout layout, @JsonProperty("speed") double speed,
-                @JsonProperty("range") double range, @JsonProperty("damage") double damage,
-                @JsonProperty("criticalDamage") double criticalDamage,
+        public ProjectileResource(@JsonProperty("layout") Layout layout, @JsonProperty("model") String model,
+                @JsonProperty("speed") double speed, @JsonProperty("range") double range,
+                @JsonProperty("damage") double damage, @JsonProperty("criticalDamage") double criticalDamage,
                 @JsonProperty("criticalChance") double criticalChance, @JsonProperty("mass") double mass) {
             this.layout = layout;
+            this.model = model;
             this.speed = speed;
             this.range = range;
             this.damage = damage;
@@ -144,6 +163,10 @@ public interface FactoryResource {
 
         public Layout getLayout() {
             return layout;
+        }
+
+        public String getModel() {
+            return model;
         }
 
         public double getSpeed() {

@@ -2,66 +2,70 @@ package org.nemesis.game;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.checkerframework.checker.signature.qual.Identifier;
 import org.nemesis.grpc.NemesisServer.NemesisDispatchHelper;
 
-import com.karlz.bounds.Area;
-import com.karlz.bounds.Bounds.Rectangle;
-import com.karlz.bounds.World;
 import com.karlz.entity.Clock;
-import com.karlz.exchange.Observable;
+import com.karlz.entity.Parent;
 
-public class Game extends World {
-    private final Clock clock = new Clock(() -> {
-        update(.01);
-    }, 1);
+public class Game implements Parent {
+	private final Clock clock = new Clock(() -> {
+		update(0.001);
+	}, 1);
 
-    private final Map<String, NemesisDispatchHelper> dispatchers = new HashMap<>();
-    private final Map<String, Player> controllers = new HashMap<>();
+	private final Map<String, NemesisDispatchHelper> dispatchers = new HashMap<>();
+	private final Map<String, Player> controllers = new HashMap<>();
 
-    private final Set<Party> parties = new HashSet<>();
-    private final Set<Player> players = new HashSet<>();
-    private final Set<Unit> units = new HashSet<>();
-    private final Set<Projectile> projectiles = new HashSet<>();
-    private final Set<Observable> destroyed = new HashSet<>();
+	private final Set<Party> parties = new HashSet<>();
+	private final Set<Player> players = new HashSet<>();
+	private final Set<Unit> units = new HashSet<>();
+	private final Set<Projectile> projectiles = new HashSet<>();
+	private final Set<Identifier> destroyed = new HashSet<>();
 
-    public Game(double width, double height) {
-        super(width, height);
-        getAreas().add(new Area(new Rectangle(width, height)));
-    }
+	public Game() {
 
-    public Clock getClock() {
-        return clock;
-    }
+	}
 
-    public Map<String, NemesisDispatchHelper> getDispatchers() {
-        return dispatchers;
-    }
+	public Clock getClock() {
+		return clock;
+	}
 
-    public Map<String, Player> getControllers() {
-        return controllers;
-    }
+	public Map<String, NemesisDispatchHelper> getDispatchers() {
+		return dispatchers;
+	}
 
-    public Set<Party> getParties() {
-        return parties;
-    }
+	public Map<String, Player> getControllers() {
+		return controllers;
+	}
 
-    public Set<Player> getPlayers() {
-        return players;
-    }
+	public Set<Party> getParties() {
+		return parties;
+	}
 
-    public Set<Unit> getUnits() {
-        return units;
-    }
+	public Set<Player> getPlayers() {
+		return players;
+	}
 
-    public Set<Projectile> getProjectiles() {
-        return projectiles;
-    }
+	public Set<Unit> getUnits() {
+		return units;
+	}
 
-    public Set<Observable> getDestroyed() {
-        return destroyed;
-    }
+	public Set<Projectile> getProjectiles() {
+		return projectiles;
+	}
+
+	public Set<Identifier> getDestroyed() {
+		return destroyed;
+	}
+
+	@Override
+	public List<Party> getChildren() {
+		return getParties().stream().collect(Collectors.toList());
+	}
 
 }

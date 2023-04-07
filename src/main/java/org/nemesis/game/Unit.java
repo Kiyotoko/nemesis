@@ -1,183 +1,175 @@
 package org.nemesis.game;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.annotation.Nullable;
 
 import org.nemesis.grpc.NemesisServer.NemesisDispatchHelper;
 
 import com.google.protobuf.Message;
+import com.karlz.bounds.Kinetic;
 import com.karlz.bounds.Layout;
 import com.karlz.bounds.Vector;
-import com.karlz.entity.Kinetic;
-import com.karlz.entity.Parent;
-import com.karlz.exchange.Property;
+import com.karlz.entity.Children;
+import com.karlz.entity.Property;
 
-public class Unit extends Kinetic implements Parent {
-    private final Player player;
+public class Unit extends Kinetic implements Children {
+	private final Player player;
+	private final String model;
 
-    private final List<Modul> moduls = new ArrayList<>();
+	public Unit(Player player, Layout layout, String model, double rotation, double acceleration, double velocity) {
+		super(layout, Vector.ZERO, rotation, acceleration, velocity);
+		this.player = player;
+		this.model = model;
+		player.getParty().getParent().getUnits().add(this);
+		player.getControllerTargets().put(getId(), this);
+		player.getUnits().add(this);
+	}
 
-    public Unit(Player player, Layout layout, double mass) {
-        super(player.getParty().getParent(), layout, mass);
-        player.getParty().getParent().getUnits().add(this);
-        player.getControllerTargets().put(getId(), this);
-        player.getUnits().add(this);
-        this.player = player;
-    }
+	@Override
+	public void update(double deltaT) {
+		super.update(deltaT);
+		changed();
+	}
 
-    @Override
-    public void update(double deltaT) {
-        Parent.super.update(deltaT);
-        super.update(deltaT);
-        changed();
-    }
+	protected void changed() {
+		for (NemesisDispatchHelper helper : getParent().getParent().getParent().getDispatchers().values()) {
+			helper.getUnits().add(this);
+		}
+	}
 
-    protected void changed() {
-        for (NemesisDispatchHelper helper : ((Game) getParent()).getDispatchers().values()) {
-            helper.getUnits().add(this);
-        }
-    }
+	@Override
+	public void destroy() {
+		player.getControllerTargets().remove(getId());
+		player.getChildren().remove(this);
+	}
 
-    @Override
-    protected void accelerate(double deltaT) {
-    }
+	@Override
+	public Message associated() {
+		return com.karlz.grpc.game.Unit.newBuilder().setKinetic((com.karlz.grpc.entity.Kinetic) super.associated())
+				.setModel(getModel()).setHitPoints(getHitPoints()).setArmor(getArmor()).setShields(getShields())
+				.setPlayerId(getPlayer().getId()).build();
+	}
 
-    @Override
-    protected void velocitate(double deltaT) {
-    }
+	public Unit place(double x, double y) {
+		return place(new Vector(x, y));
+	}
 
-    @Override
-    protected void displacement(double deltaT) {
-        Vector dif = getDestination().subtract(getPosition());
-        if (dif.magnitude() > 3) {
-            double alpha = getRotation() + Math.signum(Math.atan2(dif.getY(), dif.getX()) - getRotation()) * deltaT;
-            Vector next = getPosition().add(new Vector(Math.cos(alpha), Math.sin(alpha)));
+	public Unit place(Vector v) {
+		setDestination(v);
+		setPosition(v);
+		return this;
+	}
 
-            if (world != null) {
-                if (world.isInside(next))
-                    setPosition(next);
-            } else
-                setPosition(next);
-            getLayout().setRotation(alpha);
-        }
-    }
+	@Override
+	public Vector getDestination() {
+		if (hasDestination())
+			return super.getDestination();
+		return getPosition();
+	}
 
-    @Override
-    public void destroy() {
-        super.destroy();
-        player.getControllerTargets().remove(getId());
-        player.getChildren().remove(this);
-    }
+	public Player getPlayer() {
+		return player;
+	}
 
-    @Override
-    public Message associated() {
-        return com.karlz.grpc.game.Unit.newBuilder().setSuper((com.karlz.grpc.entity.Kinetic) super.associated())
-                .setSpeed(getSpeed()).setHitPoints(getHitPoints()).setArmor(getArmor()).setShields(getShields())
-                .setPlayerId(getPlayer().getId()).build();
-    }
+	public String getModel() {
+		return model;
+	}
 
-    public Player getPlayer() {
-        return player;
-    }
+	@Nullable
+	private Unit target;
 
-    @Override
-    public List<Modul> getChildren() {
-        return moduls;
-    }
+	public boolean hasTarget() {
+		return target != null;
+	}
 
-    @Nullable
-    private Unit target;
+	public Unit getTarget() {
+		return target;
+	}
 
-    public boolean hasTarget() {
-        return target != null;
-    }
+	public void setTarget(Unit target) {
+		this.target = target;
+	}
 
-    public Unit getTarget() {
-        return target;
-    }
+	private Property<Double> speed;
 
-    public void setTarget(Unit target) {
-        this.target = target;
-    }
+	public Property<Double> speedProperty() {
+		if (speed == null)
+			speed = new Property<Double>(1.);
+		return speed;
+	}
 
-    private Property<Double> speed;
+	public double getSpeed() {
+		return speedProperty().get();
+	}
 
-    public Property<Double> speedProperty() {
-        if (speed == null)
-            speed = new Property<Double>(1.);
-        return speed;
-    }
+	public void setSpeed(double speed) {
+		speedProperty().set(speed);
+	}
 
-    public double getSpeed() {
-        return speedProperty().get();
-    }
+	private Property<Double> hitPoints;
 
-    public void setSpeed(double speed) {
-        speedProperty().set(speed);
-    }
+	public Property<Double> hitPointsProperty() {
+		if (hitPoints == null) {
+			hitPoints = new Property<Double>(1.);
+			hitPoints.addChangeListener(e -> {
+				if (e.getNew() <= 0)
+					destroy();
+				else
+					changed();
+			});
+		}
+		return hitPoints;
+	}
 
-    private Property<Double> hitPoints;
+	public double getHitPoints() {
+		return hitPointsProperty().get();
+	}
 
-    public Property<Double> hitPointsProperty() {
-        if (hitPoints == null) {
-            hitPoints = new Property<Double>(1.);
-            hitPoints.addInvalidationListener(e -> {
-                if (e.getNew() <= 0)
-                    destroy();
-                else
-                    changed();
-            });
-        }
-        return hitPoints;
-    }
+	public void setHitPoints(double hitPoints) {
+		hitPointsProperty().set(hitPoints);
+	}
 
-    public double getHitPoints() {
-        return hitPointsProperty().get();
-    }
+	private Property<Double> shields;
 
-    public void setHitPoints(double hitPoints) {
-        hitPointsProperty().set(hitPoints);
-    }
+	public Property<Double> shieldsProperty() {
+		if (shields == null) {
+			shields = new Property<Double>(0.);
+			shields.addInvalidationListener(e -> {
+				changed();
+			});
+		}
+		return shields;
+	}
 
-    private Property<Double> shields;
+	public double getShields() {
+		return shieldsProperty().get();
+	}
 
-    public Property<Double> shieldsProperty() {
-        if (shields == null) {
-            shields = new Property<Double>(0.);
-            shields.addInvalidationListener(e -> {
-                changed();
-            });
-        }
-        return shields;
-    }
+	public void setShields(double shields) {
+		shieldsProperty().set(shields);
+	}
 
-    public double getShields() {
-        return shieldsProperty().get();
-    }
+	private Property<Double> armor;
 
-    public void setShields(double shields) {
-        shieldsProperty().set(shields);
-    }
+	public Property<Double> armorProperty() {
+		if (armor == null) {
+			armor = new Property<Double>(1.);
+			armor.addInvalidationListener(e -> {
+				changed();
+			});
+		}
+		return armor;
+	}
 
-    private Property<Double> armor;
+	public double getArmor() {
+		return armorProperty().get();
+	}
 
-    public Property<Double> armorProperty() {
-        if (armor == null) {
-            armor = new Property<Double>(1.);
-            armor.addInvalidationListener(e -> {
-                changed();
-            });
-        }
-        return armor;
-    }
+	public void setArmor(double armor) {
+		armorProperty().set(armor);
+	}
 
-    public double getArmor() {
-        return armorProperty().get();
-    }
-
-    public void setArmor(double armor) {
-        armorProperty().set(armor);
-    }
+	@Override
+	public Player getParent() {
+		return player;
+	}
 }

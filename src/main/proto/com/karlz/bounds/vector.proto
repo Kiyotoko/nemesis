@@ -3,14 +3,7 @@ syntax = "proto3";
 option java_multiple_files = true;
 option optimize_for = SPEED;
 option java_package = "com.karlz.grpc.bounds";
-
 message Vector {
-  /*
-   * The x coordinate of the vector.
-   */
-  double x = 1;
-  /*
-   * The y coordinate of the vector.
-   */
-  double y = 2;
+	double x = 1;
+	double y = 2;
 }

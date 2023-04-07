@@ -4,6 +4,8 @@ import java.util.Map;
 
 import org.nemesis.grpc.NemesisClient;
 
+import com.karlz.exchange.Mirror;
+
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
@@ -11,6 +13,7 @@ import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener.Change;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -22,80 +25,86 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 public class Game extends BorderPane {
-    private final NemesisClient client;
+	private final NemesisClient client;
 
-    private final ObservableMap<String, Party> parties = FXCollections.observableHashMap();
-    private final ObservableMap<String, Player> players = FXCollections.observableHashMap();
-    private final ObservableMap<String, Unit> units = FXCollections.observableHashMap();
-    private final ObservableMap<String, Projectile> projectiles = FXCollections.observableHashMap();
+	private final ObservableMap<String, Party> parties = FXCollections.observableHashMap();
+	private final ObservableMap<String, Player> players = FXCollections.observableHashMap();
+	private final ObservableMap<String, Unit> units = FXCollections.observableHashMap();
+	private final ObservableMap<String, Projectile> projectiles = FXCollections.observableHashMap();
 
-    private final ObservableSet<Unit> selected = FXCollections.observableSet();
+	private final ObservableSet<Unit> selected = FXCollections.observableSet();
 
-    public Game(NemesisClient client) {
-        this.client = client;
+	public Game(NemesisClient client) {
+		this.client = client;
 
-        Pane down = new Pane();
-        units.addListener(getGraphicListener(down));
-        projectiles.addListener(getGraphicListener(down));
-        getChildren().add(down);
+		Pane down = new Pane();
+		units.addListener(getGraphicListener(down));
+		projectiles.addListener(getGraphicListener(down));
 
-        VBox left = new VBox(2);
-        parties.addListener(getGraphicListener(left));
-        setLeft(left);
+//		for (int x = 0; x < 1000; x += 100)
+//			down.getChildren().add(new Line(x, 0, x, 1000));
+//		for (int y = 0; y < 1000; y += 100)
+//			down.getChildren().add(new Line(0, y, 1000, y));
+		getChildren().add(down);
 
-        VBox right = new VBox(2);
-        players.addListener(getGraphicListener(right));
-        setRight(right);
+		VBox left = new VBox(2);
+		parties.addListener(getGraphicListener(left));
+		setLeft(left);
 
-        HBox bottom = new HBox(2);
-        selected.addListener((Change<? extends Unit> change) -> {
-            if (change.wasAdded())
-                bottom.getChildren().add(change.getElementAdded().getIcon());
-            if (change.wasRemoved())
-                bottom.getChildren().remove(change.getElementRemoved().getIcon());
-        });
-        setPadding(new Insets(20));
-        setBottom(bottom);
+		VBox right = new VBox(2);
+		players.addListener(getGraphicListener(right));
+		setRight(right);
 
-        addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-            if (e.getButton() == MouseButton.SECONDARY)
-                for (Unit unit : getSelected())
-                    client.change(unit.getKinetic().getSuper().getId(), new Point2D(e.getSceneX(), e.getSceneY()));
-        });
-        setBackground(new Background(new BackgroundFill(Color.gray(.1), null, null)));
-    }
+		HBox bottom = new HBox(2);
+		selected.addListener((Change<? extends Unit> change) -> {
+			if (change.wasAdded())
+				bottom.getChildren().add(change.getElementAdded().getIcon());
+			if (change.wasRemoved())
+				bottom.getChildren().remove(change.getElementRemoved().getIcon());
+		});
+		setPadding(new Insets(20));
+		setBottom(bottom);
 
-    private MapChangeListener<String, Pane> getGraphicListener(Pane parent) {
-        return (change) -> {
-            if (change.wasAdded())
-                parent.getChildren().add(change.getValueAdded());
-            if (change.wasRemoved())
-                parent.getChildren().add(change.getValueRemoved());
-            System.out.println(change);
-        };
-    }
+		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			if (e.getButton() == MouseButton.SECONDARY)
+				for (Unit unit : getSelected())
+					client.change(unit.getId(), new Point2D(e.getSceneX(), e.getSceneY()));
+		});
+		setBackground(new Background(new BackgroundFill(Color.gray(.1), null, null)));
+	}
 
-    public NemesisClient getClient() {
-        return client;
-    }
+	private MapChangeListener<String, Mirror<?>> getGraphicListener(Pane parent) {
+		return (change) -> {
+			if (change.wasAdded())
+				parent.getChildren().add((Node) change.getValueAdded().getReflection());
+			if (change.wasRemoved())
+				parent.getChildren().remove((Node) change.getValueRemoved().getReflection());
+			System.out.println(change);
+			System.out.println(change.getValueAdded().getReflection());
+		};
+	}
 
-    public Map<String, Party> getParties() {
-        return parties;
-    }
+	public NemesisClient getClient() {
+		return client;
+	}
 
-    public Map<String, Player> getPlayers() {
-        return players;
-    }
+	public Map<String, Party> getParties() {
+		return parties;
+	}
 
-    public Map<String, Unit> getUnits() {
-        return units;
-    }
+	public Map<String, Player> getPlayers() {
+		return players;
+	}
 
-    public Map<String, Projectile> getProjectiles() {
-        return projectiles;
-    }
+	public Map<String, Unit> getUnits() {
+		return units;
+	}
 
-    public ObservableSet<Unit> getSelected() {
-        return selected;
-    }
+	public Map<String, Projectile> getProjectiles() {
+		return projectiles;
+	}
+
+	public ObservableSet<Unit> getSelected() {
+		return selected;
+	}
 }

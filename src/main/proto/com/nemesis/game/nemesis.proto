@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+import "com/karlz/bounds/vector.proto";
+import "com/karlz/exchange/identifiable.proto";
+import "com/nemesis/game/party.proto";
+import "com/nemesis/game/player.proto";
+import "com/nemesis/game/unit.proto";
+import "com/nemesis/game/projectile.proto";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+option java_package = "org.nemesis.grpc.game";
+option java_outer_classname = "NemesisProto";
+service Nemesis {
+	rpc Status (StatusRequest) returns (StatusResponse);
+	rpc Change (ChangeRequest) returns (ChangeResponse);
+}
+
+message StatusRequest {
+	string token = 1;
+}
+
+message StatusResponse {
+	repeated Party parties = 1;
+	repeated Player players = 2;
+	repeated Unit units = 3;
+	repeated Projectile projectiles = 5;
+	repeated Identifiable destroyed = 1024;
+}
+
+message ChangeRequest {
+	string token = 1;
+	string unit_id = 2;
+	Vector destination = 3;
+}
+
+message ChangeResponse {
+	string message = 1;
+}

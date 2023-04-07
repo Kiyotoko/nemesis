@@ -1,50 +1,50 @@
 package org.nemesis.graphic;
 
-import com.karlz.exchange.Reference;
-import com.karlz.grpc.entity.Observable;
+import com.karlz.exchange.Mirror;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Label;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
-public class Player extends Pane implements Reference<com.karlz.grpc.game.Player> {
-    private final Game game;
+public class Player extends Mirror<com.karlz.grpc.game.Player> {
+	private final Game game;
 
-    private Label model = new Label(toString(), new Circle(5, Color.AQUAMARINE)); // TODO
+	public Player(Game game) {
+		super(new Label("Player { }", new Circle(5, Color.AQUAMARINE)));
+		this.game = game;
+		getReflection().setTextFill(Color.WHITE);
+		webColor.addListener((observable, o, n) -> getReflection().setGraphic(new Circle(5, Color.web(n))));
+		userName.addListener((observable, o, n) -> getReflection().setText(n));
+	}
 
-    public Player(Game game) {
-        this.game = game;
-        model.setTextFill(Color.WHITE);
-        webColor.addListener((observable, o, n) -> model.setGraphic(new Circle(5, Color.web(n))));
-        userName.addListener((observable, o, n) -> model.setText(n));
-        getChildren().add(model);
-    }
+	private final ObservableList<String> unitIds = FXCollections.observableArrayList();
+	private final StringProperty webColor = new SimpleStringProperty("");
+	private final StringProperty userName = new SimpleStringProperty("");
 
-    private Observable observable;
+	@Override
+	public void update(com.karlz.grpc.game.Player reference) {
+		if (!hasSource())
+			setSource(reference.getSuper());
 
-    private final ObservableList<String> unitIds = FXCollections.observableArrayList();
-    private final StringProperty webColor = new SimpleStringProperty("");
-    private final StringProperty userName = new SimpleStringProperty("");
+		unitIds.setAll(reference.getUnitIdsList());
+		webColor.set(reference.getWebColor());
+		userName.set(reference.getUserName());
+	}
 
-    @Override
-    public void update(com.karlz.grpc.game.Player reference) {
-        if (observable == null)
-            observable = reference.getSuper();
-        unitIds.setAll(reference.getUnitIdsList());
-        webColor.set(reference.getWebColor());
-        userName.set(reference.getUserName());
-    }
+	@Override
+	public Label getReflection() {
+		return (Label) super.getReflection();
+	}
 
-    public Game getGame() {
-        return game;
-    }
+	public Game getGame() {
+		return game;
+	}
 
-    public ObservableList<String> getUnitIds() {
-        return unitIds;
-    }
+	public ObservableList<String> getUnitIds() {
+		return unitIds;
+	}
 }

@@ -1,147 +1,128 @@
 package org.nemesis.game;
 
-import javax.annotation.Nonnull;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.karlz.bounds.Kinetic;
 import com.karlz.bounds.Layout;
 import com.karlz.bounds.Vector;
-import com.karlz.entity.Kinetic;
-import com.karlz.exchange.Property;
+import com.karlz.entity.Property;
 
 public class Projectile extends Kinetic {
-    @JsonIgnore
-    private transient Party party;
+	@JsonIgnore
+	private transient Party party;
 
-    public Projectile(Party party, Layout layout, double mass) {
-        super(party.getParent(), layout, mass);
-        party.getParent().getProjectiles().add(this);
-        this.party = party;
-    }
+	public Projectile(Party party, Layout layout, double mass) {
+		super(layout, Vector.ZERO, 0, 0, 0);
+		party.getParent().getProjectiles().add(this);
+		this.party = party;
+	}
 
-    @Override
-    protected void displacement(double deltaT) {
-        Vector cur = getPosition();
-        Vector dif = getVelocity().multiply(deltaT);
-        if (world != null) {
-            if (world.intersectsKinetic(getLayout())) {
-//                hit(null); // TODO
-            }
-            setPosition(cur.add(dif));
-        } else
-            setPosition(cur.add(dif));
-        getLayout().setRotation(-Math.atan2(dif.getX(), dif.getY()));
-    }
+	protected void hit(Unit unit) {
+		double damage = getDamage() + (int) (Math.random() + getCriticalChance()) * getCriticalDamage();
+		unit.setHitPoints(unit.getHitPoints() - Math.max(damage - unit.getShields(), 0) / unit.getArmor());
+		unit.setShields(Math.max(unit.getShields() - damage, 0));
+	}
 
-    protected void hit(Unit unit) {
-        double damage = getDamage() + (int) (Math.random() + getCriticalChance()) * getCriticalDamage();
-        unit.setHitPoints(unit.getHitPoints() - Math.max(damage - unit.getShields(), 0) / unit.getArmor());
-        unit.setShields(Math.max(unit.getShields() - damage, 0));
-    }
+	@Override
+	public com.karlz.grpc.game.Projectile associated() {
+		return com.karlz.grpc.game.Projectile.newBuilder().setSuper((com.karlz.grpc.entity.Kinetic) super.associated())
+				.setPartyId(party.getId()).setSpeed(getSpeed()).setRange(getRange()).setDamage(getDamage())
+				.setCriticalChance(getCriticalChance()).setCriticalDamage(getCriticalDamage()).build();
+	}
 
-    @Override
-    public com.karlz.grpc.game.Projectile associated() {
-        return com.karlz.grpc.game.Projectile.newBuilder().setSuper((com.karlz.grpc.entity.Kinetic) super.associated())
-                .setPartyId(party.getId()).setSpeed(getSpeed()).setRange(getRange()).setDamage(getDamage())
-                .setCriticalChance(getCriticalChance()).setCriticalDamage(getCriticalDamage())
-                .build();
-    }
+	void destroy() {
 
-    @Override
-    @Nonnull
-    public Vector getAcceleration() {
-        return super.getAcceleration().multiply(getSpeed());
-    }
+	}
 
-    public Party getParty() {
-        return party;
-    }
+	public Party getParty() {
+		return party;
+	}
 
-    private Property<Double> speed;
+	private Property<Double> speed;
 
-    public Property<Double> speedProperty() {
-        if (speed == null) {
-            speed = new Property<Double>(1.);
-        }
-        return speed;
-    }
+	public Property<Double> speedProperty() {
+		if (speed == null) {
+			speed = new Property<Double>(1.);
+		}
+		return speed;
+	}
 
-    public double getSpeed() {
-        return speedProperty().get();
-    }
+	public double getSpeed() {
+		return speedProperty().get();
+	}
 
-    public void setSpeed(double speed) {
-        speedProperty().set(speed);
-    }
+	public void setSpeed(double speed) {
+		speedProperty().set(speed);
+	}
 
-    private Property<Double> range;
+	private Property<Double> range;
 
-    public Property<Double> rangeProperty() {
-        if (range == null) {
-            range = new Property<Double>(1.);
-            range.addInvalidationListener(e -> {
-                if (e.getNew() <= 0)
-                    destroy();
-            });
-        }
-        return range;
-    }
+	public Property<Double> rangeProperty() {
+		if (range == null) {
+			range = new Property<Double>(1.);
+			range.addChangeListener(e -> {
+				if (e.getNew() <= 0)
+					destroy();
+			});
+		}
+		return range;
+	}
 
-    public double getRange() {
-        return rangeProperty().get();
-    }
+	public double getRange() {
+		return rangeProperty().get();
+	}
 
-    public void setRange(double range) {
-        rangeProperty().set(range);
-    }
+	public void setRange(double range) {
+		rangeProperty().set(range);
+	}
 
-    private Property<Double> damage;
+	private Property<Double> damage;
 
-    public Property<Double> damageProperty() {
-        if (damage == null) {
-            damage = new Property<Double>(1.);
-        }
-        return damage;
-    }
+	public Property<Double> damageProperty() {
+		if (damage == null) {
+			damage = new Property<Double>(1.);
+		}
+		return damage;
+	}
 
-    public double getDamage() {
-        return damageProperty().get();
-    }
+	public double getDamage() {
+		return damageProperty().get();
+	}
 
-    public void setDamage(double damage) {
-        damageProperty().set(damage);
-    }
+	public void setDamage(double damage) {
+		damageProperty().set(damage);
+	}
 
-    private Property<Double> criticalDamage;
+	private Property<Double> criticalDamage;
 
-    public Property<Double> criticalDamageProperty() {
-        if (criticalDamage == null) {
-            criticalDamage = new Property<Double>(2.);
-        }
-        return criticalDamage;
-    }
+	public Property<Double> criticalDamageProperty() {
+		if (criticalDamage == null) {
+			criticalDamage = new Property<Double>(2.);
+		}
+		return criticalDamage;
+	}
 
-    public double getCriticalDamage() {
-        return criticalDamageProperty().get();
-    }
+	public double getCriticalDamage() {
+		return criticalDamageProperty().get();
+	}
 
-    public void setCriticalDamage(double criticalDamage) {
-        criticalDamageProperty().set(criticalDamage);
-    }
+	public void setCriticalDamage(double criticalDamage) {
+		criticalDamageProperty().set(criticalDamage);
+	}
 
-    private Property<Double> criticalChance;
+	private Property<Double> criticalChance;
 
-    public Property<Double> criticalChanceProperty() {
-        if (criticalChance == null) {
-            criticalChance = new Property<Double>(0.);
-        }
-        return criticalChance;
-    }
+	public Property<Double> criticalChanceProperty() {
+		if (criticalChance == null) {
+			criticalChance = new Property<Double>(0.);
+		}
+		return criticalChance;
+	}
 
-    public double getCriticalChance() {
-        return criticalChanceProperty().get();
-    }
+	public double getCriticalChance() {
+		return criticalChanceProperty().get();
+	}
 
-    public void setCriticalChance(double criticalChance) {
-        criticalChanceProperty().set(criticalChance);
-    }
+	public void setCriticalChance(double criticalChance) {
+		criticalChanceProperty().set(criticalChance);
+	}
 }

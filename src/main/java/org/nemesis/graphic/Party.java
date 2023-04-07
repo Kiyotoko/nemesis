@@ -1,46 +1,42 @@
 package org.nemesis.graphic;
 
-import com.karlz.exchange.Reference;
-import com.karlz.grpc.entity.Observable;
+import com.karlz.exchange.Mirror;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Label;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
-public class Party extends Pane implements Reference<com.karlz.grpc.game.Party> {
-    private final Game game;
+public class Party extends Mirror<com.karlz.grpc.game.Party> {
+	private final Game game;
 
-    private Label model = new Label(toString(), new Circle(5, Color.CRIMSON)); // TODO
+	public Party(Game game) {
+		super(new Label("Party { }", new Circle(5, Color.CRIMSON)));
+		this.game = game;
+		getReflection().setTextFill(Color.WHITE);
+	}
 
-    public Party(Game game) {
-        this.game = game;
-        model.setTextFill(Color.WHITE);
-        getChildren().add(model);
-    }
+	private final ObservableList<String> playerIds = FXCollections.observableArrayList();
 
-    private transient Observable observable;
+	@Override
+	public void update(com.karlz.grpc.game.Party reference) {
+		if (!hasSource())
+			setSource(reference.getSuper());
 
-    private final ObservableList<String> playerIds = FXCollections.observableArrayList();
+		playerIds.setAll(reference.getPlayerIdsList());
+	}
 
-    @Override
-    public void update(com.karlz.grpc.game.Party reference) {
-        if (observable == null)
-            observable = reference.getSuper();
-        playerIds.setAll(reference.getPlayerIdsList());
-    }
+	@Override
+	public Label getReflection() {
+		return (Label) super.getReflection();
+	}
 
-    public Game getGame() {
-        return game;
-    }
+	public Game getGame() {
+		return game;
+	}
 
-    public Observable getObservable() {
-        return observable;
-    }
-
-    public ObservableList<String> getPlayerIds() {
-        return playerIds;
-    }
+	public ObservableList<String> getPlayerIds() {
+		return playerIds;
+	}
 }

@@ -26,6 +26,7 @@ import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import javafx.geometry.Point2D;
+import javafx.scene.layout.BorderPane;
 
 public class NemesisClient {
 	private final ManagedChannel channel;
@@ -46,7 +47,7 @@ public class NemesisClient {
 		channel.shutdown();
 	}
 
-	private final Game game = new Game(this);
+	private final Game game = new Game(this, new BorderPane());
 
 	public class NemesisStoreHelper implements StoreHelper<Reference<?>, StatusResponse> {
 		private final Map<String, Supplier<? extends Reference<?>>> creators = Map.of( //

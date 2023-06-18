@@ -1,18 +1,25 @@
 package org.nemesis.game;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.karlz.bounds.Kinetic;
-import com.karlz.bounds.Layout;
-import com.karlz.bounds.Vector;
-import com.karlz.entity.Property;
 
-public class Projectile extends Kinetic {
+import io.scvis.entity.Children;
+import io.scvis.geometry.Kinetic2D;
+import io.scvis.geometry.Layout2D;
+import io.scvis.geometry.Vector2D;
+import io.scvis.observable.Property;
+import javafx.scene.Node;
+import javafx.scene.layout.Pane;
+
+public class Projectile extends Kinetic2D implements Children, Displayable {
 	@JsonIgnore
 	private transient Party party;
 
-	public Projectile(Party party, Layout layout, double mass) {
-		super(layout, Vector.ZERO, 0, 0, 0);
+	private final Pane pane = new Pane();
+
+	public Projectile(Party party, Layout2D layout, double mass) {
+		super(layout, Vector2D.ZERO, 0, Vector2D.ZERO, Vector2D.ZERO);
 		party.getParent().getProjectiles().add(this);
+		getParent().getChildren().add(this);
 		this.party = party;
 	}
 
@@ -22,19 +29,18 @@ public class Projectile extends Kinetic {
 		unit.setShields(Math.max(unit.getShields() - damage, 0));
 	}
 
-	@Override
-	public com.karlz.grpc.game.Projectile associated() {
-		return com.karlz.grpc.game.Projectile.newBuilder().setSuper((com.karlz.grpc.entity.Kinetic) super.associated())
-				.setPartyId(party.getId()).setSpeed(getSpeed()).setRange(getRange()).setDamage(getDamage())
-				.setCriticalChance(getCriticalChance()).setCriticalDamage(getCriticalDamage()).build();
-	}
-
-	void destroy() {
+	public void destroy() {
+		Children.super.destroy();
 
 	}
 
 	public Party getParty() {
 		return party;
+	}
+
+	@Override
+	public Node getGraphic() {
+		return pane;
 	}
 
 	private Property<Double> speed;
@@ -47,11 +53,11 @@ public class Projectile extends Kinetic {
 	}
 
 	public double getSpeed() {
-		return speedProperty().get();
+		return speedProperty().getValue();
 	}
 
 	public void setSpeed(double speed) {
-		speedProperty().set(speed);
+		speedProperty().setValue(speed);
 	}
 
 	private Property<Double> range;
@@ -68,11 +74,11 @@ public class Projectile extends Kinetic {
 	}
 
 	public double getRange() {
-		return rangeProperty().get();
+		return rangeProperty().getValue();
 	}
 
 	public void setRange(double range) {
-		rangeProperty().set(range);
+		rangeProperty().setValue(range);
 	}
 
 	private Property<Double> damage;
@@ -85,11 +91,11 @@ public class Projectile extends Kinetic {
 	}
 
 	public double getDamage() {
-		return damageProperty().get();
+		return damageProperty().getValue();
 	}
 
 	public void setDamage(double damage) {
-		damageProperty().set(damage);
+		damageProperty().setValue(damage);
 	}
 
 	private Property<Double> criticalDamage;
@@ -102,11 +108,11 @@ public class Projectile extends Kinetic {
 	}
 
 	public double getCriticalDamage() {
-		return criticalDamageProperty().get();
+		return criticalDamageProperty().getValue();
 	}
 
 	public void setCriticalDamage(double criticalDamage) {
-		criticalDamageProperty().set(criticalDamage);
+		criticalDamageProperty().setValue(criticalDamage);
 	}
 
 	private Property<Double> criticalChance;
@@ -119,10 +125,33 @@ public class Projectile extends Kinetic {
 	}
 
 	public double getCriticalChance() {
-		return criticalChanceProperty().get();
+		return criticalChanceProperty().getValue();
 	}
 
 	public void setCriticalChance(double criticalChance) {
-		criticalChanceProperty().set(criticalChance);
+		criticalChanceProperty().setValue(criticalChance);
+	}
+
+	@Override
+	public void accelerate(double deltaT) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void velocitate(double deltaT) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void displacement(double deltaT) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public Game getParent() {
+		return party.getParent();
 	}
 }

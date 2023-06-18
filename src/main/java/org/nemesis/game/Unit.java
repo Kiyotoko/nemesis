@@ -2,65 +2,74 @@ package org.nemesis.game;
 
 import javax.annotation.Nullable;
 
-import org.nemesis.grpc.NemesisServer.NemesisDispatchHelper;
+import io.scvis.entity.Children;
+import io.scvis.geometry.Kinetic2D;
+import io.scvis.geometry.Layout2D;
+import io.scvis.geometry.Vector2D;
+import io.scvis.observable.Property;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 
-import com.google.protobuf.Message;
-import com.karlz.bounds.Kinetic;
-import com.karlz.bounds.Layout;
-import com.karlz.bounds.Vector;
-import com.karlz.entity.Children;
-import com.karlz.entity.Property;
-
-public class Unit extends Kinetic implements Children {
+public class Unit extends Kinetic2D implements Children, Displayable, Iconifiable {
 	private final Player player;
-	private final String model;
 
-	public Unit(Player player, Layout layout, String model, double rotation, double acceleration, double velocity) {
-		super(layout, Vector.ZERO, rotation, acceleration, velocity);
+	private final Pane pane = new Pane();
+
+	public Unit(Player player, Layout2D layout) {
+		super(layout, Vector2D.ZERO, 0, Vector2D.ZERO, Vector2D.ZERO);
 		this.player = player;
-		this.model = model;
-		player.getParty().getParent().getUnits().add(this);
-		player.getControllerTargets().put(getId(), this);
+		pane.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			System.out.println(e);
+			if (e.getButton() == MouseButton.PRIMARY) {
+				if (!e.isShiftDown())
+					player.getParty().getParent().getSelected().clear();
+				if (!player.getParty().getParent().getSelected().contains(this))
+					player.getParty().getParent().getSelected().add(this);
+			}
+		});
 		player.getUnits().add(this);
+		getParent().getChildren().add(this);
+		getParent().getUnits().add(this);
 	}
 
 	@Override
 	public void update(double deltaT) {
 		super.update(deltaT);
-		changed();
-	}
-
-	protected void changed() {
-		for (NemesisDispatchHelper helper : getParent().getParent().getParent().getDispatchers().values()) {
-			helper.getUnits().add(this);
-		}
 	}
 
 	@Override
 	public void destroy() {
-		player.getControllerTargets().remove(getId());
-		player.getChildren().remove(this);
-	}
-
-	@Override
-	public Message associated() {
-		return com.karlz.grpc.game.Unit.newBuilder().setKinetic((com.karlz.grpc.entity.Kinetic) super.associated())
-				.setModel(getModel()).setHitPoints(getHitPoints()).setArmor(getArmor()).setShields(getShields())
-				.setPlayerId(getPlayer().getId()).build();
+		Children.super.destroy();
+		player.getUnits().remove(this);
+		getParent().getUnits().remove(this);
 	}
 
 	public Unit place(double x, double y) {
-		return place(new Vector(x, y));
+		return place(new Vector2D(x, y));
 	}
 
-	public Unit place(Vector v) {
+	public Unit place(Vector2D v) {
 		setDestination(v);
 		setPosition(v);
 		return this;
 	}
 
 	@Override
-	public Vector getDestination() {
+	public void setRotation(double rotation) {
+		pane.setRotate(rotation);
+		super.setRotation(rotation);
+	}
+
+	@Override
+	public void setPosition(Vector2D position) {
+		pane.setLayoutX(position.getX());
+		pane.setLayoutY(position.getY());
+		super.setPosition(position);
+	}
+
+	@Override
+	public Vector2D getDestination() {
 		if (hasDestination())
 			return super.getDestination();
 		return getPosition();
@@ -68,10 +77,6 @@ public class Unit extends Kinetic implements Children {
 
 	public Player getPlayer() {
 		return player;
-	}
-
-	public String getModel() {
-		return model;
 	}
 
 	@Nullable
@@ -98,11 +103,11 @@ public class Unit extends Kinetic implements Children {
 	}
 
 	public double getSpeed() {
-		return speedProperty().get();
+		return speedProperty().getValue();
 	}
 
 	public void setSpeed(double speed) {
-		speedProperty().set(speed);
+		speedProperty().setValue(speed);
 	}
 
 	private Property<Double> hitPoints;
@@ -113,19 +118,17 @@ public class Unit extends Kinetic implements Children {
 			hitPoints.addChangeListener(e -> {
 				if (e.getNew() <= 0)
 					destroy();
-				else
-					changed();
 			});
 		}
 		return hitPoints;
 	}
 
 	public double getHitPoints() {
-		return hitPointsProperty().get();
+		return hitPointsProperty().getValue();
 	}
 
 	public void setHitPoints(double hitPoints) {
-		hitPointsProperty().set(hitPoints);
+		hitPointsProperty().setValue(hitPoints);
 	}
 
 	private Property<Double> shields;
@@ -134,18 +137,17 @@ public class Unit extends Kinetic implements Children {
 		if (shields == null) {
 			shields = new Property<Double>(0.);
 			shields.addInvalidationListener(e -> {
-				changed();
 			});
 		}
 		return shields;
 	}
 
 	public double getShields() {
-		return shieldsProperty().get();
+		return shieldsProperty().getValue();
 	}
 
 	public void setShields(double shields) {
-		shieldsProperty().set(shields);
+		shieldsProperty().setValue(shields);
 	}
 
 	private Property<Double> armor;
@@ -154,22 +156,57 @@ public class Unit extends Kinetic implements Children {
 		if (armor == null) {
 			armor = new Property<Double>(1.);
 			armor.addInvalidationListener(e -> {
-				changed();
 			});
 		}
 		return armor;
 	}
 
 	public double getArmor() {
-		return armorProperty().get();
+		return armorProperty().getValue();
 	}
 
 	public void setArmor(double armor) {
-		armorProperty().set(armor);
+		armorProperty().setValue(armor);
 	}
 
 	@Override
-	public Player getParent() {
-		return player;
+	public Game getParent() {
+		return player.getParent();
+	}
+
+	@Override
+	public Pane getGraphic() {
+		return pane;
+	}
+
+	private final Pane icon = new Pane();
+
+	@Override
+	public Pane getIcon() {
+		return icon;
+	}
+
+	@Override
+	public void accelerate(double deltaT) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void velocitate(double deltaT) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void displacement(double deltaT) {
+		double distance = getPosition().distance(getDestination());
+		if (distance > 20) {
+			double angle = getPosition().angle(getDestination());
+			if (Math.abs(angle - getRotation()) > 0.1) {
+				setRotation(getRotation() + Math.signum(angle - getRotation()) * 0.1);
+			}
+			setPosition(getPosition().add(new Vector2D(-Math.cos(getRotation()), -Math.sin(getRotation()))));
+		}
 	}
 }

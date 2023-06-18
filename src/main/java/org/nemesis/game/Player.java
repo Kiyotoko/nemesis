@@ -1,50 +1,61 @@
 package org.nemesis.game;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.nemesis.grpc.Factory.UnitFactory;
-
-import com.karlz.entity.Children;
-import com.karlz.entity.Parent;
-import com.karlz.exchange.Identifiable;
-
+import io.scvis.entity.Children;
+import io.scvis.proto.Identifiable;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
-public class Player implements Parent, Children, Identifiable {
+public class Player implements Children, Identifiable, Displayable {
 	private final List<Unit> units = new ArrayList<>();
 
-	private final Map<String, Unit> controllerTargets = new HashMap<>();
+	private final Label label = new Label(getClass().getSimpleName());
+	{
+		label.setFont(Font.font("Ubuntu", FontWeight.BOLD, 14));
+		label.setTextFill(Color.WHITE);
+		label.setPrefWidth(100);
+		label.setPadding(new Insets(5));
+		label.setBorder(new Border(
+				new BorderStroke(Color.GRAY, BorderStrokeStyle.SOLID, new CornerRadii(50), new BorderWidths(3))));
+	}
 
 	private final Party party;
 
-	private String webColor = Color.AQUAMARINE.toString();
-	private String userName = getType() + ' ' + getId();
+	private Color color = Color.GREENYELLOW;
+	private String name = "";
 
 	public Player(Party party) {
 		this.party = party;
-		UnitFactory.INFANTERY.apply(this).place(100, 200);
-		UnitFactory.ARTILLERY.apply(this).place(200, 200);
-		UnitFactory.AIRCRAFT.apply(this).place(300, 200);
-		UnitFactory.TANK.apply(this).place(400, 200);
 		party.getPlayers().add(this);
+		getParent().getPlayers().add(this);
+		getParent().getChildren().add(this);
 	}
 
 	@Override
-	public com.karlz.grpc.game.Player associated() {
-		return com.karlz.grpc.game.Player.newBuilder()
-				.setSuper((com.karlz.grpc.exchange.Identifiable) Identifiable.super.associated()).setWebColor(webColor)
-				.setUserName(userName).build();
+	public void update(double deltaT) {
+
+	}
+
+	@Override
+	public void destroy() {
+		Children.super.destroy();
+		party.getPlayers().remove(this);
+		getParent().getPlayers().remove(this);
 	}
 
 	public List<Unit> getUnits() {
 		return units;
-	}
-
-	public Map<String, Unit> getControllerTargets() {
-		return controllerTargets;
 	}
 
 	public Party getParty() {
@@ -52,30 +63,32 @@ public class Player implements Parent, Children, Identifiable {
 	}
 
 	@Override
-	public Party getParent() {
-		return party;
+	public Game getParent() {
+		return party.getParent();
 	}
 
 	@Override
-	public List<Unit> getChildren() {
-		return units;
+	public Node getGraphic() {
+		return label;
 	}
 
-	public String getWebColor() {
-		return webColor;
+	public void setColor(Color color) {
+		this.color = color;
+		label.setTextFill(color);
+		label.setBorder(
+				new Border(new BorderStroke(color, BorderStrokeStyle.SOLID, new CornerRadii(50), new BorderWidths(3))));
 	}
 
-	public void setWebColor(String webColor) {
-		if (webColor != null && !webColor.isBlank())
-			this.webColor = webColor;
+	public Color getColor() {
+		return color;
 	}
 
-	public String getUserName() {
-		return userName;
+	public void setName(String name) {
+		this.name = name;
+		label.setText(name);
 	}
 
-	public void setUserName(String userName) {
-		if (userName != null && !userName.isBlank())
-			this.userName = userName;
+	public String getName() {
+		return name;
 	}
 }

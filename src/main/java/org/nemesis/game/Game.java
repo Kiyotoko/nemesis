@@ -10,6 +10,7 @@ import io.scvis.geometry.Vector2D;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -38,26 +39,21 @@ import javax.annotation.Nonnull;
 
 public class Game extends Scene implements Parent {
 
-	private final List<Children> entities = new ArrayList<>();
+	private final @Nonnull List<Children> entities = new ArrayList<>();
 
-	private final ObservableList<Player> players = FXCollections.observableArrayList();
-	private final ObservableList<Unit> units = FXCollections.observableArrayList();
-	private final ObservableList<Projectile> projectiles = FXCollections.observableArrayList();
+	private final @Nonnull ObservableList<Player> players = FXCollections.observableArrayList();
+	private final @Nonnull ObservableList<Unit> units = FXCollections.observableArrayList();
+	private final @Nonnull ObservableList<Projectile> projectiles = FXCollections.observableArrayList();
 
-	private final ObservableSet<Unit> selected = FXCollections.observableSet();
+	private final @Nonnull ObservableSet<Unit> selected = FXCollections.observableSet();
 
-	private final SubScene subScene = new SubScene(new Pane(), 600, 600, true, SceneAntialiasing.BALANCED);
-	private final Timeline timeline = new Timeline(new KeyFrame(Duration.millis(50.0), e -> {
-		update(1.0);
-	}));
-	{
-		timeline.setCycleCount(Animation.INDEFINITE);
-		timeline.play();
-	}
+	private final @Nonnull Timeline timeline = new Timeline(
+			new KeyFrame(Duration.millis(50.0), e -> update(1.0)));
 
-	Level level = new LevelLoader(new File("src/main/resources/text/level/level.json")).getLoaded();
+	private final @Nonnull Level level = new LevelLoader(new File("src/main/resources/text/level/level.json"))
+			.getLoaded();
 
-	private final Camera camera = new ParallelCamera();
+	private final @Nonnull Camera camera = new ParallelCamera();
 	private double startX;
 	private double startY;
 	private boolean dragged = false;
@@ -65,21 +61,21 @@ public class Game extends Scene implements Parent {
 	public Game(BorderPane pane) {
 		super(pane, 600, 600, true, SceneAntialiasing.BALANCED);
 
-		Pane down = (Pane) subScene.getRoot();
+		Pane down = new Pane();
 		down.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, null, null)));
 		units.addListener(getGraphicListener(down));
 		projectiles.addListener(getGraphicListener(down));
-
 		down.getChildren().add(level.getGraphic());
 
+		SubScene subScene = new SubScene(down, 600, 600, true, SceneAntialiasing.BALANCED);
 		pane.getChildren().add(subScene);
 
-		VBox right = new VBox(2);
-		right.setPadding(new Insets(10));
-		players.addListener(getGraphicListener(right));
-		pane.setRight(right);
+		VBox top = new VBox(2);
+		top.setPadding(new Insets(10));
+		players.addListener(getGraphicListener(top));
+		pane.setTop(top);
 
-		HBox bottom = new HBox(2);
+		HBox bottom = new HBox(8);
 		bottom.setPadding(new Insets(10));
 		selected.addListener((SetChangeListener.Change<? extends Unit> change) -> {
 			if (change.wasAdded())
@@ -121,20 +117,33 @@ public class Game extends Scene implements Parent {
 		subScene.widthProperty().bind(widthProperty());
 		subScene.heightProperty().bind(heightProperty());
 		subScene.setCamera(camera);
+
+		timeline.setCycleCount(Animation.INDEFINITE);
+		timeline.play();
 	}
 
 	private ListChangeListener<Displayable> getGraphicListener(Pane parent) {
-		return (change) -> {
+		return change -> {
 			change.next();
 			if (change.wasAdded())
-				for (int index = 0; index < change.getAddedSize(); index++)
-					parent.getChildren().add(change.getAddedSubList().get(index).getGraphic());
+				for (int index = 0; index < change.getAddedSize(); index++) {
+					Displayable displayable = change.getAddedSubList().get(index);
+					parent.getChildren().add(displayable.getGraphic());
+					if (displayable instanceof Physical)
+						Platform.runLater(((Physical) displayable)::relocate);
+				}
 			if (change.wasRemoved())
-				for (int index = 0; index < change.getAddedSize(); index++)
+				for (int index = 0; index < change.getRemovedSize(); index++)
 					parent.getChildren().remove(change.getRemoved().get(index).getGraphic());
 		};
 	}
 
+	@Nonnull
+	public Timeline getTimeline() {
+		return timeline;
+	}
+
+	@Nonnull
 	public ObservableSet<Unit> getSelected() {
 		return selected;
 	}
@@ -157,6 +166,7 @@ public class Game extends Scene implements Parent {
 		return entities;
 	}
 
+	@Nonnull
 	public Level getLevel() {
 		return level;
 	}

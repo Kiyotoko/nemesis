@@ -3,48 +3,128 @@ package org.nemesis.game;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import io.scvis.entity.Children;
-import io.scvis.entity.Kinetic;
 import io.scvis.geometry.Vector2D;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 
-public class Unit implements Kinetic, Children, Displayable, Iconifiable {
-	private final @Nonnull Player player;
+import java.util.function.Function;
 
-	private final @Nonnull Pane pane = new Pane();
+public class Unit extends Physical implements Iconifiable {
+
 	private final @Nonnull Pane icon = new Pane();
 
-	public Unit(@Nonnull Player player) {
-		this.player = player;
-		pane.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-			if (getPlayer().isController()){
-				if (e.getButton() == MouseButton.PRIMARY) {
+	public Unit(@Nonnull Player player, @Nonnull Vector2D position) {
+		super(player, position);
+		getGraphic().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			if (e.getButton() == MouseButton.PRIMARY) {
+				if (getPlayer().isController()) {
 					if (!e.isShiftDown())
 						player.getGame().getSelected().clear();
 					player.getGame().getSelected().add(this);
-				} else if (e.getButton() == MouseButton.SECONDARY) {
-					for (Unit unit: getParent().getSelected()) {
-						unit.setTarget(this);
-					}
+				}
+			} else if (e.getButton() == MouseButton.SECONDARY) {
+				for (Unit unit: getParent().getSelected()) {
+					unit.setTarget(this);
 				}
 			}
 		});
-		player.getUnits().add(this);
-		getParent().getChildren().add(this);
+		getGraphic().setPickOnBounds(true);
+		setDestination(position);
+
+		getPlayer().getUnits().add(this);
 		getParent().getUnits().add(this);
 	}
 
 	@Override
+	public void update(double deltaT) {
+		super.update(deltaT);
+		shoot(deltaT);
+	}
+
+	@Override
+	public void accelerate(double deltaT) {
+		// No acceleration
+	}
+
+	@Override
+	public void velocitate(double deltaT) {
+		// No velocity
+	}
+
+	@Override
+	public void displacement(double deltaT) {
+		Vector2D difference = getDestination().subtract(getPosition());
+		if (difference.magnitude() > 2) {
+			Vector2D next = getPosition().add(difference.normalize().multiply(getSpeed()));
+			Level level = getParent().getLevel();
+			if (!level.getField(next.getX(), next.getY()).isBlocked()) {
+				if (getPlayer().isController()) hide();
+				setPosition(next);
+			}
+		}
+		if (getPlayer().isController()) reveal();
+	}
+
+	public void shoot(double deltaT) {
+		if (hasTarget() && !isReloading()) {
+			if (getTarget().getHitPoints() > 0) {
+				Function<Unit, Projectile> creator = getProjectileCreator();
+				if (creator != null) {
+					creator.apply(this);
+					setReloadTime(getReloadSpeed());
+				}
+			} else {
+				setTarget(null);
+			}
+		}
+		setReloadTime(Math.max(getReloadTime() - deltaT, 0));
+	}
+
+	public void hide() {
+		Level level = getParent().getLevel();
+		for (int x = -3; x < 4; x++) {
+			for (int y = -3; y < 4; y++) {
+				level.getField(getPosition().getX()+x*16, getPosition().getY()+y*16)
+						.setVisible(false);
+			}
+		}
+	}
+
+	public void reveal() {
+		Level level = getParent().getLevel();
+		for (int x = -3; x < 4; x++) {
+			for (int y = -3; y < 4; y++) {
+				level.getField(getPosition().getX()+x*16, getPosition().getY()+y*16)
+						.setVisible(true);
+			}
+		}
+	}
+
+	@Override
 	public void destroy() {
-		Children.super.destroy();
+		super.destroy();
 		getPlayer().getUnits().remove(this);
+		getParent().getUnits().remove(this);
+		if (getPlayer().isController())
+			getParent().getSelected().remove(this);
 	}
 
 	@Nonnull
-	public Player getPlayer() {
-		return player;
+	@Override
+	public Pane getIcon() {
+		return icon;
+	}
+
+	private @Nullable Function<Unit, Projectile> projectileCreator;
+
+	public void setProjectileCreator(@Nullable Function<Unit, Projectile> projectileCreator) {
+		this.projectileCreator = projectileCreator;
+	}
+
+	@Nullable
+	public Function<Unit, Projectile> getProjectileCreator() {
+		return projectileCreator;
 	}
 
 	@Nullable
@@ -65,42 +145,6 @@ public class Unit implements Kinetic, Children, Displayable, Iconifiable {
 		this.target = target;
 	}
 
-	@Nonnull
-	private Vector2D position = Vector2D.ZERO;
-
-	public void setPosition(@Nonnull Vector2D position) {
-		this.position = position;
-		pane.setLayoutX(position.getX() - pane.getWidth() / 2);
-		pane.setLayoutY(position.getY() - pane.getHeight() / 2);
-	}
-
-	@Nonnull
-	public Vector2D getPosition() {
-		return position;
-	}
-
-	@Nonnull
-	private Vector2D destination = Vector2D.ZERO;
-
-	public void setDestination(@Nonnull Vector2D destination) {
-		this.destination = destination;
-	}
-
-	@Nonnull
-	public Vector2D getDestination() {
-		return destination;
-	}
-
-	private double speed = 1;
-
-	public double getSpeed() {
-		return speed;
-	}
-
-	public void setSpeed(double speed) {
-		this.speed = speed;
-	}
-
 	private double hitPoints = 1;
 
 	public double getHitPoints() {
@@ -109,6 +153,7 @@ public class Unit implements Kinetic, Children, Displayable, Iconifiable {
 
 	public void setHitPoints(double hitPoints) {
 		this.hitPoints = hitPoints;
+		if (hitPoints <= 0) destroy();
 	}
 
 	private double armor = 1;
@@ -121,65 +166,27 @@ public class Unit implements Kinetic, Children, Displayable, Iconifiable {
 		this.armor = armor;
 	}
 
-	@Nonnull
-	@Override
-	public Game getParent() {
-		return player.getParent();
+	private double reloadTime = 0;
+
+	public boolean isReloading() {
+		return reloadTime > 0;
 	}
 
-	@Nonnull
-	@Override
-	public Pane getGraphic() {
-		return pane;
+	public void setReloadTime(double reloadTime) {
+		this.reloadTime = reloadTime;
 	}
 
-	@Nonnull
-	@Override
-	public Pane getIcon() {
-		return icon;
+	public double getReloadTime() {
+		return reloadTime;
 	}
 
-	@Override
-	public void accelerate(double deltaT) {
-		// No acceleration
+	private double reloadSpeed = 1;
+
+	public void setReloadSpeed(double reloadSpeed) {
+		this.reloadSpeed = reloadSpeed;
 	}
 
-	@Override
-	public void velocitate(double deltaT) {
-		// No velocity
-	}
-
-	@Override
-	public void displacement(double deltaT) {
-		Vector2D difference = getDestination().subtract(getPosition());
-		if (difference.magnitude() > 2) {
-			Vector2D next = getPosition().add(difference.normalize().multiply(speed));
-			Level level = getParent().getLevel();
-			if (!level.getField(next.getX(), next.getY()).isBlocked()) {
-				hide();
-				setPosition(next);
-			}
-		}
-		reveal();
-	}
-
-	public void hide() {
-		Level level = getParent().getLevel();
-		for (int x = -3; x < 4; x++) {
-			for (int y = -3; y < 4; y++) {
-				level.getField(position.getX()+x*16, position.getY()+y*16)
-						.setVisible(false);
-			}
-		}
-	}
-
-	public void reveal() {
-		Level level = getParent().getLevel();
-		for (int x = -3; x < 4; x++) {
-			for (int y = -3; y < 4; y++) {
-				level.getField(position.getX()+x*16, position.getY()+y*16)
-						.setVisible(true);
-			}
-		}
+	public double getReloadSpeed() {
+		return reloadSpeed;
 	}
 }

@@ -1,27 +1,55 @@
 package org.nemesis.game;
 
-import io.scvis.entity.Children;
-import io.scvis.entity.Kinetic;
 import io.scvis.geometry.Vector2D;
-import javafx.scene.Node;
-import javafx.scene.layout.Pane;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Random;
 
-public class Projectile implements Kinetic, Children, Displayable {
+public class Projectile extends Physical {
 
-	private final @Nonnull Player player;
+	public Projectile(@Nonnull Unit unit) {
+		super(unit.getPlayer(), unit.getPosition());
 
-	private final @Nonnull Pane pane = new Pane();
+		if (unit.hasTarget())
+			setDestination(unit.getTarget().getDestination());
+		else {
+			setDestination(unit.getPosition());
+		}
+		setRotation(getPosition().angle(getDestination()));
 
-	public Projectile(@Nonnull Player player) {
-		this.player = player;
-		getPlayer().getGame().getProjectiles().add(this);
+		getParent().getProjectiles().add(this);
 		getParent().getChildren().add(this);
 	}
 
+	@Override
+	public void accelerate(double deltaT) {
+		// No acceleration
+	}
+
+	@Override
+	public void velocitate(double deltaT) {
+		// No velocity
+	}
+
+	@Override
+	public void displacement(double deltaT) {
+		setPosition(getPosition().add(
+				new Vector2D(-Math.cos(getRotation()), -Math.sin(getRotation())).multiply(getSpeed())));
+		setRange(getRange() - getSpeed());
+		check();
+	}
+
 	private static final @Nonnull Random random = new Random();
+
+	protected void check() {
+		for (Unit unit : List.copyOf(getParent().getUnits())) {
+			if (unit.getPlayer() != getPlayer() && (unit.getPosition().distance(getPosition()) < 10)) {
+				hit(unit);
+				destroy();
+			}
+		}
+	}
 
 	protected void hit(Unit unit) {
 		unit.setHitPoints(unit.getHitPoints() - Math.max(getDamage() +
@@ -30,37 +58,8 @@ public class Projectile implements Kinetic, Children, Displayable {
 
 	@Override
 	public void destroy() {
-		Children.super.destroy();
-		getPlayer().getGame().getProjectiles().remove(this);
-	}
-
-	@Nonnull
-	public Player getPlayer() {
-		return player;
-	}
-
-	@Nonnull
-	@Override
-	public Game getParent() {
-		return getPlayer().getParent();
-	}
-
-	@Nonnull
-    @Override
-	public Node getGraphic() {
-		return pane;
-	}
-
-	@Nonnull
-	private Vector2D position = Vector2D.ZERO;
-
-	public void setPosition(@Nonnull Vector2D position) {
-		this.position = position;
-	}
-
-	@Nonnull
-	public Vector2D getPosition() {
-		return position;
+		super.destroy();
+		getParent().getProjectiles().remove(this);
 	}
 
 	private double rotation;
@@ -73,16 +72,6 @@ public class Projectile implements Kinetic, Children, Displayable {
 		return rotation;
 	}
 
-	private double speed;
-
-	public double getSpeed() {
-		return speed;
-	}
-
-	public void setSpeed(double speed) {
-		this.speed = speed;
-	}
-
 	private double range;
 
 	public double getRange() {
@@ -91,6 +80,7 @@ public class Projectile implements Kinetic, Children, Displayable {
 
 	public void setRange(double range) {
 		this.range = range;
+		if (range <= 0) destroy();
 	}
 
 	private double damage;
@@ -121,22 +111,5 @@ public class Projectile implements Kinetic, Children, Displayable {
 
 	public void setCriticalChance(double criticalChance) {
 		this.criticalChance = criticalChance;
-	}
-
-	@Override
-	public void accelerate(double deltaT) {
-		// No acceleration
-	}
-
-	@Override
-	public void velocitate(double deltaT) {
-		// No velocity
-	}
-
-	@Override
-	public void displacement(double deltaT) {
-		setPosition(getPosition().add(
-				new Vector2D(Math.cos(getRotation()), Math.sin(getRotation())).multiply(getSpeed())));
-		setRange(getRange() - getSpeed());
 	}
 }

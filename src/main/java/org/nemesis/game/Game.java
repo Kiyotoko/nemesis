@@ -1,5 +1,6 @@
 package org.nemesis.game;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,9 +15,9 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
+import javafx.geometry.Insets;
 import javafx.scene.Camera;
 import javafx.scene.Cursor;
-import javafx.scene.Node;
 import javafx.scene.ParallelCamera;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
@@ -30,14 +31,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
 import javafx.util.Duration;
+import org.nemesis.content.LevelLoader;
+
+import javax.annotation.Nonnull;
 
 public class Game extends Scene implements Parent {
 
 	private final List<Children> entities = new ArrayList<>();
 
-	private final ObservableList<Party> parties = FXCollections.observableArrayList();
 	private final ObservableList<Player> players = FXCollections.observableArrayList();
 	private final ObservableList<Unit> units = FXCollections.observableArrayList();
 	private final ObservableList<Projectile> projectiles = FXCollections.observableArrayList();
@@ -53,8 +55,11 @@ public class Game extends Scene implements Parent {
 		timeline.play();
 	}
 
+	Level level = new LevelLoader(new File("src/main/resources/text/level/level.json")).getLoaded();
+
 	private final Camera camera = new ParallelCamera();
-	private double startX, startY;
+	private double startX;
+	private double startY;
 	private boolean dragged = false;
 
 	public Game(BorderPane pane) {
@@ -65,47 +70,31 @@ public class Game extends Scene implements Parent {
 		units.addListener(getGraphicListener(down));
 		projectiles.addListener(getGraphicListener(down));
 
-		for (int x = 0; x <= 1000; x += 100) {
-			Line line = new Line(x, 0, x, 1000);
-			line.setStroke(Color.CORNFLOWERBLUE);
-			down.getChildren().add(line);
-		}
-		for (int y = 0; y <= 1000; y += 100) {
-			Line line = new Line(0, y, 1000, y);
-			line.setStroke(Color.CORNFLOWERBLUE);
-			down.getChildren().add(line);
-		}
+		down.getChildren().add(level.getGraphic());
+
 		pane.getChildren().add(subScene);
 
-		VBox left = new VBox(2);
-		parties.addListener(getGraphicListener(left));
-		pane.setLeft(left);
-
 		VBox right = new VBox(2);
+		right.setPadding(new Insets(10));
 		players.addListener(getGraphicListener(right));
 		pane.setRight(right);
 
 		HBox bottom = new HBox(2);
+		bottom.setPadding(new Insets(10));
 		selected.addListener((SetChangeListener.Change<? extends Unit> change) -> {
 			if (change.wasAdded())
 				bottom.getChildren().add(change.getElementAdded().getIcon());
 			if (change.wasRemoved())
 				bottom.getChildren().remove(change.getElementRemoved().getIcon());
-			System.out.println(change);
 		});
 		pane.setBottom(bottom);
 
 		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 			if (e.getButton() == MouseButton.SECONDARY) {
 				for (Unit unit : getSelected()) {
-					System.out.println(e.getSceneX());
-					System.out.println(e.getSceneY());
-					System.out.println(camera.getLayoutX());
-					System.out.println(camera.getLayoutY());
 					unit.setDestination(
-							new Vector2D(e.getSceneX() + camera.getLayoutX(), e.getSceneY() + camera.getLayoutX()));
+							new Vector2D(e.getSceneX() + camera.getLayoutX(), e.getSceneY() + camera.getLayoutY()));
 				}
-				System.out.println(selected);
 			}
 		});
 		addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
@@ -139,20 +128,15 @@ public class Game extends Scene implements Parent {
 			change.next();
 			if (change.wasAdded())
 				for (int index = 0; index < change.getAddedSize(); index++)
-					parent.getChildren().add((Node) change.getAddedSubList().get(index).getGraphic());
+					parent.getChildren().add(change.getAddedSubList().get(index).getGraphic());
 			if (change.wasRemoved())
 				for (int index = 0; index < change.getAddedSize(); index++)
-					parent.getChildren().remove((Node) change.getRemoved().get(index).getGraphic());
-			System.out.println(change);
+					parent.getChildren().remove(change.getRemoved().get(index).getGraphic());
 		};
 	}
 
 	public ObservableSet<Unit> getSelected() {
 		return selected;
-	}
-
-	public List<Party> getParties() {
-		return parties;
 	}
 
 	public List<Player> getPlayers() {
@@ -167,9 +151,13 @@ public class Game extends Scene implements Parent {
 		return projectiles;
 	}
 
+	@Nonnull
 	@Override
 	public List<Children> getChildren() {
 		return entities;
 	}
 
+	public Level getLevel() {
+		return level;
+	}
 }

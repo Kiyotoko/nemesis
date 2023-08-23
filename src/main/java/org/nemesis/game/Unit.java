@@ -1,31 +1,34 @@
 package org.nemesis.game;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.scvis.entity.Children;
-import io.scvis.geometry.Kinetic2D;
-import io.scvis.geometry.Layout2D;
+import io.scvis.entity.Kinetic;
 import io.scvis.geometry.Vector2D;
-import io.scvis.observable.Property;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 
-public class Unit extends Kinetic2D implements Children, Displayable, Iconifiable {
-	private final Player player;
+public class Unit implements Kinetic, Children, Displayable, Iconifiable {
+	private final @Nonnull Player player;
 
-	private final Pane pane = new Pane();
+	private final @Nonnull Pane pane = new Pane();
+	private final @Nonnull Pane icon = new Pane();
 
-	public Unit(Player player, Layout2D layout) {
-		super(layout, Vector2D.ZERO, 0, Vector2D.ZERO, Vector2D.ZERO);
+	public Unit(@Nonnull Player player) {
 		this.player = player;
 		pane.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-			System.out.println(e);
-			if (e.getButton() == MouseButton.PRIMARY) {
-				if (!e.isShiftDown())
-					player.getParty().getParent().getSelected().clear();
-				if (!player.getParty().getParent().getSelected().contains(this))
-					player.getParty().getParent().getSelected().add(this);
+			if (getPlayer().isController()){
+				if (e.getButton() == MouseButton.PRIMARY) {
+					if (!e.isShiftDown())
+						player.getGame().getSelected().clear();
+					player.getGame().getSelected().add(this);
+				} else if (e.getButton() == MouseButton.SECONDARY) {
+					for (Unit unit: getParent().getSelected()) {
+						unit.setTarget(this);
+					}
+				}
 			}
 		});
 		player.getUnits().add(this);
@@ -34,47 +37,12 @@ public class Unit extends Kinetic2D implements Children, Displayable, Iconifiabl
 	}
 
 	@Override
-	public void update(double deltaT) {
-		super.update(deltaT);
-	}
-
-	@Override
 	public void destroy() {
 		Children.super.destroy();
-		player.getUnits().remove(this);
-		getParent().getUnits().remove(this);
+		getPlayer().getUnits().remove(this);
 	}
 
-	public Unit place(double x, double y) {
-		return place(new Vector2D(x, y));
-	}
-
-	public Unit place(Vector2D v) {
-		setDestination(v);
-		setPosition(v);
-		return this;
-	}
-
-	@Override
-	public void setRotation(double rotation) {
-		pane.setRotate(rotation);
-		super.setRotation(rotation);
-	}
-
-	@Override
-	public void setPosition(Vector2D position) {
-		pane.setLayoutX(position.getX());
-		pane.setLayoutY(position.getY());
-		super.setPosition(position);
-	}
-
-	@Override
-	public Vector2D getDestination() {
-		if (hasDestination())
-			return super.getDestination();
-		return getPosition();
-	}
-
+	@Nonnull
 	public Player getPlayer() {
 		return player;
 	}
@@ -86,101 +54,86 @@ public class Unit extends Kinetic2D implements Children, Displayable, Iconifiabl
 		return target != null;
 	}
 
+	@Nonnull
 	public Unit getTarget() {
+		if (target == null)
+			return this;
 		return target;
 	}
 
-	public void setTarget(Unit target) {
+	public void setTarget(@Nullable Unit target) {
 		this.target = target;
 	}
 
-	private Property<Double> speed;
+	@Nonnull
+	private Vector2D position = Vector2D.ZERO;
 
-	public Property<Double> speedProperty() {
-		if (speed == null)
-			speed = new Property<Double>(1.);
+	public void setPosition(@Nonnull Vector2D position) {
+		this.position = position;
+		pane.setLayoutX(position.getX() - pane.getWidth() / 2);
+		pane.setLayoutY(position.getY() - pane.getHeight() / 2);
+	}
+
+	@Nonnull
+	public Vector2D getPosition() {
+		return position;
+	}
+
+	@Nonnull
+	private Vector2D destination = Vector2D.ZERO;
+
+	public void setDestination(@Nonnull Vector2D destination) {
+		this.destination = destination;
+	}
+
+	@Nonnull
+	public Vector2D getDestination() {
+		return destination;
+	}
+
+	private double speed = 1;
+
+	public double getSpeed() {
 		return speed;
 	}
 
-	public double getSpeed() {
-		return speedProperty().getValue();
-	}
-
 	public void setSpeed(double speed) {
-		speedProperty().setValue(speed);
+		this.speed = speed;
 	}
 
-	private Property<Double> hitPoints;
+	private double hitPoints = 1;
 
-	public Property<Double> hitPointsProperty() {
-		if (hitPoints == null) {
-			hitPoints = new Property<Double>(1.);
-			hitPoints.addChangeListener(e -> {
-				if (e.getNew() <= 0)
-					destroy();
-			});
-		}
+	public double getHitPoints() {
 		return hitPoints;
 	}
 
-	public double getHitPoints() {
-		return hitPointsProperty().getValue();
-	}
-
 	public void setHitPoints(double hitPoints) {
-		hitPointsProperty().setValue(hitPoints);
+		this.hitPoints = hitPoints;
 	}
 
-	private Property<Double> shields;
+	private double armor = 1;
 
-	public Property<Double> shieldsProperty() {
-		if (shields == null) {
-			shields = new Property<Double>(0.);
-			shields.addInvalidationListener(e -> {
-			});
-		}
-		return shields;
-	}
-
-	public double getShields() {
-		return shieldsProperty().getValue();
-	}
-
-	public void setShields(double shields) {
-		shieldsProperty().setValue(shields);
-	}
-
-	private Property<Double> armor;
-
-	public Property<Double> armorProperty() {
-		if (armor == null) {
-			armor = new Property<Double>(1.);
-			armor.addInvalidationListener(e -> {
-			});
-		}
+	public double getArmor() {
 		return armor;
 	}
 
-	public double getArmor() {
-		return armorProperty().getValue();
-	}
-
 	public void setArmor(double armor) {
-		armorProperty().setValue(armor);
+		this.armor = armor;
 	}
 
+	@Nonnull
 	@Override
 	public Game getParent() {
 		return player.getParent();
 	}
 
+	@Nonnull
 	@Override
 	public Pane getGraphic() {
 		return pane;
 	}
 
-	private final Pane icon = new Pane();
-
+	@Nonnull
 	@Override
 	public Pane getIcon() {
 		return icon;
@@ -188,25 +141,45 @@ public class Unit extends Kinetic2D implements Children, Displayable, Iconifiabl
 
 	@Override
 	public void accelerate(double deltaT) {
-		// TODO Auto-generated method stub
-
+		// No acceleration
 	}
 
 	@Override
 	public void velocitate(double deltaT) {
-		// TODO Auto-generated method stub
-
+		// No velocity
 	}
 
 	@Override
 	public void displacement(double deltaT) {
-		double distance = getPosition().distance(getDestination());
-		if (distance > 20) {
-			double angle = getPosition().angle(getDestination());
-			if (Math.abs(angle - getRotation()) > 0.1) {
-				setRotation(getRotation() + Math.signum(angle - getRotation()) * 0.1);
+		Vector2D difference = getDestination().subtract(getPosition());
+		if (difference.magnitude() > 2) {
+			Vector2D next = getPosition().add(difference.normalize().multiply(speed));
+			Level level = getParent().getLevel();
+			if (!level.getField(next.getX(), next.getY()).isBlocked()) {
+				hide();
+				setPosition(next);
 			}
-			setPosition(getPosition().add(new Vector2D(-Math.cos(getRotation()), -Math.sin(getRotation()))));
+		}
+		reveal();
+	}
+
+	public void hide() {
+		Level level = getParent().getLevel();
+		for (int x = -3; x < 4; x++) {
+			for (int y = -3; y < 4; y++) {
+				level.getField(position.getX()+x*16, position.getY()+y*16)
+						.setVisible(false);
+			}
+		}
+	}
+
+	public void reveal() {
+		Level level = getParent().getLevel();
+		for (int x = -3; x < 4; x++) {
+			for (int y = -3; y < 4; y++) {
+				level.getField(position.getX()+x*16, position.getY()+y*16)
+						.setVisible(true);
+			}
 		}
 	}
 }

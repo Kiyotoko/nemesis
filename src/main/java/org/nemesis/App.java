@@ -1,29 +1,33 @@
 package org.nemesis;
 
+import org.nemesis.content.BaseUnit;
 import org.nemesis.game.Game;
-import org.nemesis.game.Party;
 import org.nemesis.game.Player;
-import org.nemesis.game.Unit;
 
 import javafx.application.Application;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 public class App extends Application {
 
 	@Override
-	public void start(Stage stage) throws Exception {
+	public void start(Stage stage) {
 		Game game = new Game(new BorderPane());
 
-		Party party = new Party(game);
-		Player player = new Player(party);
-		player.setName("Dragon");
-		player.setColor(Color.RED);
-		Unit unit = new Unit(player, null);
-		unit.getGraphic().getChildren().add(new Circle(12, Color.WHITE));
-		unit.getIcon().getChildren().add(new Circle(8, Color.WHITE));
+		Player player = new Player(game);
+		player.markAsController();
+		player.setName("Player");
+		player.setColor(Color.BLUE);
+		for (int i = 0; i < 5; i++)
+			new BaseUnit(player);
+
+
+		Player computer = new Player(game);
+		computer.setName("Computer");
+		computer.setColor(Color.RED);
+		for (int i = 0; i < 5; i++)
+			new BaseUnit(computer);
 
 		stage.setScene(game);
 		stage.show();

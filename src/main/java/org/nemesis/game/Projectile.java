@@ -1,157 +1,142 @@
 package org.nemesis.game;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import io.scvis.entity.Children;
-import io.scvis.geometry.Kinetic2D;
-import io.scvis.geometry.Layout2D;
+import io.scvis.entity.Kinetic;
 import io.scvis.geometry.Vector2D;
-import io.scvis.observable.Property;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 
-public class Projectile extends Kinetic2D implements Children, Displayable {
-	@JsonIgnore
-	private transient Party party;
+import javax.annotation.Nonnull;
+import java.util.Random;
 
-	private final Pane pane = new Pane();
+public class Projectile implements Kinetic, Children, Displayable {
 
-	public Projectile(Party party, Layout2D layout, double mass) {
-		super(layout, Vector2D.ZERO, 0, Vector2D.ZERO, Vector2D.ZERO);
-		party.getParent().getProjectiles().add(this);
+	private final @Nonnull Player player;
+
+	private final @Nonnull Pane pane = new Pane();
+
+	public Projectile(@Nonnull Player player) {
+		this.player = player;
+		getPlayer().getGame().getProjectiles().add(this);
 		getParent().getChildren().add(this);
-		this.party = party;
 	}
+
+	private static final @Nonnull Random random = new Random();
 
 	protected void hit(Unit unit) {
-		double damage = getDamage() + (int) (Math.random() + getCriticalChance()) * getCriticalDamage();
-		unit.setHitPoints(unit.getHitPoints() - Math.max(damage - unit.getShields(), 0) / unit.getArmor());
-		unit.setShields(Math.max(unit.getShields() - damage, 0));
-	}
-
-	public void destroy() {
-		Children.super.destroy();
-
-	}
-
-	public Party getParty() {
-		return party;
+		unit.setHitPoints(unit.getHitPoints() - Math.max(getDamage() +
+				random.nextInt((int) (1.0 + getCriticalChance())) * getCriticalDamage(), 0) / unit.getArmor());
 	}
 
 	@Override
+	public void destroy() {
+		Children.super.destroy();
+		getPlayer().getGame().getProjectiles().remove(this);
+	}
+
+	@Nonnull
+	public Player getPlayer() {
+		return player;
+	}
+
+	@Nonnull
+	@Override
+	public Game getParent() {
+		return getPlayer().getParent();
+	}
+
+	@Nonnull
+    @Override
 	public Node getGraphic() {
 		return pane;
 	}
 
-	private Property<Double> speed;
+	@Nonnull
+	private Vector2D position = Vector2D.ZERO;
 
-	public Property<Double> speedProperty() {
-		if (speed == null) {
-			speed = new Property<Double>(1.);
-		}
+	public void setPosition(@Nonnull Vector2D position) {
+		this.position = position;
+	}
+
+	@Nonnull
+	public Vector2D getPosition() {
+		return position;
+	}
+
+	private double rotation;
+
+	public void setRotation(double rotation) {
+		this.rotation = rotation;
+	}
+
+	public double getRotation() {
+		return rotation;
+	}
+
+	private double speed;
+
+	public double getSpeed() {
 		return speed;
 	}
 
-	public double getSpeed() {
-		return speedProperty().getValue();
-	}
-
 	public void setSpeed(double speed) {
-		speedProperty().setValue(speed);
+		this.speed = speed;
 	}
 
-	private Property<Double> range;
+	private double range;
 
-	public Property<Double> rangeProperty() {
-		if (range == null) {
-			range = new Property<Double>(1.);
-			range.addChangeListener(e -> {
-				if (e.getNew() <= 0)
-					destroy();
-			});
-		}
+	public double getRange() {
 		return range;
 	}
 
-	public double getRange() {
-		return rangeProperty().getValue();
-	}
-
 	public void setRange(double range) {
-		rangeProperty().setValue(range);
+		this.range = range;
 	}
 
-	private Property<Double> damage;
+	private double damage;
 
-	public Property<Double> damageProperty() {
-		if (damage == null) {
-			damage = new Property<Double>(1.);
-		}
+	public double getDamage() {
 		return damage;
 	}
 
-	public double getDamage() {
-		return damageProperty().getValue();
-	}
-
 	public void setDamage(double damage) {
-		damageProperty().setValue(damage);
+		this.damage = damage;
 	}
 
-	private Property<Double> criticalDamage;
+	private double criticalDamage;
 
-	public Property<Double> criticalDamageProperty() {
-		if (criticalDamage == null) {
-			criticalDamage = new Property<Double>(2.);
-		}
+	public double getCriticalDamage() {
 		return criticalDamage;
 	}
 
-	public double getCriticalDamage() {
-		return criticalDamageProperty().getValue();
-	}
-
 	public void setCriticalDamage(double criticalDamage) {
-		criticalDamageProperty().setValue(criticalDamage);
+		this.criticalDamage = criticalDamage;
 	}
 
-	private Property<Double> criticalChance;
+	private double criticalChance;
 
-	public Property<Double> criticalChanceProperty() {
-		if (criticalChance == null) {
-			criticalChance = new Property<Double>(0.);
-		}
+	public double getCriticalChance() {
 		return criticalChance;
 	}
 
-	public double getCriticalChance() {
-		return criticalChanceProperty().getValue();
-	}
-
 	public void setCriticalChance(double criticalChance) {
-		criticalChanceProperty().setValue(criticalChance);
+		this.criticalChance = criticalChance;
 	}
 
 	@Override
 	public void accelerate(double deltaT) {
-		// TODO Auto-generated method stub
-
+		// No acceleration
 	}
 
 	@Override
 	public void velocitate(double deltaT) {
-		// TODO Auto-generated method stub
-
+		// No velocity
 	}
 
 	@Override
 	public void displacement(double deltaT) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public Game getParent() {
-		return party.getParent();
+		setPosition(getPosition().add(
+				new Vector2D(Math.cos(getRotation()), Math.sin(getRotation())).multiply(getSpeed())));
+		setRange(getRange() - getSpeed());
 	}
 }

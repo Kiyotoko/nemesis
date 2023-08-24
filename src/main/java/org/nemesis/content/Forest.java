@@ -7,5 +7,6 @@ public class Forest extends Field {
 
     public Forest() {
         super(Color.DARKGREEN);
+        setVisibility(2.5);
     }
 }

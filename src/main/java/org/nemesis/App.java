@@ -15,6 +15,7 @@ public class App extends Application {
 	@Override
 	public void start(Stage stage) {
 		Game game = new Game(new BorderPane());
+		game.setOnKeyPressed(Player.getKeyEventHandler());
 
 		Player player = new Player(game);
 		player.markAsController();

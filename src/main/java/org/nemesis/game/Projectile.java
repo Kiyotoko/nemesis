@@ -1,6 +1,7 @@
 package org.nemesis.game;
 
 import io.scvis.geometry.Vector2D;
+import org.nemesis.content.DamageAnimation;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -46,6 +47,7 @@ public class Projectile extends Physical {
 		for (Unit unit : List.copyOf(getParent().getUnits())) {
 			if (unit.getPlayer() != getPlayer() && (unit.getPosition().distance(getPosition()) < 10)) {
 				hit(unit);
+				new DamageAnimation(this);
 				destroy();
 			}
 		}

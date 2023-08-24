@@ -6,6 +6,8 @@ import io.scvis.geometry.Vector2D;
 import javafx.scene.layout.Pane;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public abstract class Physical implements Displayable, Kinetic, Children {
 
@@ -56,15 +58,22 @@ public abstract class Physical implements Displayable, Kinetic, Children {
     }
 
     @Nonnull
-    private Vector2D destination = Vector2D.ZERO;
+    private final Deque<Vector2D> destinations = new ArrayDeque<>(4);
 
     public void setDestination(@Nonnull Vector2D destination) {
-        this.destination = destination;
+        getDestinations().clear();
+        getDestinations().add(destination);
     }
 
     @Nonnull
     public Vector2D getDestination() {
-        return destination;
+        final Vector2D checked = getDestinations().peek();
+        return checked != null ? checked : getPosition();
+    }
+
+    @Nonnull
+    public Deque<Vector2D> getDestinations() {
+        return destinations;
     }
 
     private double speed = 1;

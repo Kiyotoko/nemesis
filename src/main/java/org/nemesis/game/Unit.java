@@ -8,6 +8,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 
+import java.util.List;
 import java.util.function.Function;
 
 public class Unit extends Physical implements Iconifiable {
@@ -20,16 +21,25 @@ public class Unit extends Physical implements Iconifiable {
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (getPlayer().isController()) {
 					if (!e.isShiftDown())
-						player.getGame().getSelected().clear();
-					player.getGame().getSelected().add(this);
+						List.copyOf(player.getGame().getSelected()).forEach(Unit::deselect);
+					select();
 				}
 			} else if (e.getButton() == MouseButton.SECONDARY) {
-				for (Unit unit: getParent().getSelected()) {
-					unit.setTarget(this);
+				if (!getPlayer().isController()) {
+					getParent().getSelected().forEach(unit -> unit.setTarget(this));
 				}
 			}
 		});
 		getGraphic().setPickOnBounds(true);
+		getGraphic().setVisible(getPlayer().isController());
+		getIcon().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			if (e.getButton() == MouseButton.PRIMARY) {
+				List.copyOf(player.getGame().getSelected()).forEach(Unit::deselect);
+				select();
+			} else if (e.getButton() == MouseButton.SECONDARY) {
+				deselect();
+			}
+		});
 		setDestination(position);
 
 		getPlayer().getUnits().add(this);
@@ -54,16 +64,19 @@ public class Unit extends Physical implements Iconifiable {
 
 	@Override
 	public void displacement(double deltaT) {
-		Vector2D difference = getDestination().subtract(getPosition());
-		if (difference.magnitude() > 2) {
-			Vector2D next = getPosition().add(difference.normalize().multiply(getSpeed()));
-			Level level = getParent().getLevel();
-			if (!level.getField(next.getX(), next.getY()).isBlocked()) {
-				if (getPlayer().isController()) hide();
-				setPosition(next);
-			}
+		if (!getDestinations().isEmpty()) {
+			Vector2D difference = getDestination().subtract(getPosition());
+			if (difference.magnitude() > getSpeed()) {
+				Vector2D next = getPosition().add(difference.normalize().multiply(getSpeed()));
+				Level level = getParent().getLevel();
+				if (!level.getField(next.getX(), next.getY()).isBlocked()) {
+					if (getPlayer().isController()) hide();
+					setPosition(next);
+				}
+			} else getDestinations().remove();
 		}
 		if (getPlayer().isController()) reveal();
+		else visible();
 	}
 
 	public void shoot(double deltaT) {
@@ -81,10 +94,23 @@ public class Unit extends Physical implements Iconifiable {
 		setReloadTime(Math.max(getReloadTime() - deltaT, 0));
 	}
 
+	public void visible() {
+		double difference = getParent().getLevel().getField(getPosition().getX(), getPosition().getY()).getVisibility() * 16.0;
+		for (Unit unit : List.copyOf(getParent().getUnits())) {
+			if (unit.getPlayer() != getPlayer() && (Math.abs(unit.getPosition().getX() - getPosition().getX()) <
+					difference && Math.abs(unit.getPosition().getY() - getPosition().getY()) < difference)) {
+				getGraphic().setVisible(true);
+				return;
+			}
+		}
+		getGraphic().setVisible(false);
+	}
+
 	public void hide() {
 		Level level = getParent().getLevel();
-		for (int x = -3; x < 4; x++) {
-			for (int y = -3; y < 4; y++) {
+		double visibility = level.getField(getPosition().getX(), getPosition().getY()).getVisibility();
+		for (double x = -visibility; x <= visibility; x++) {
+			for (double y = -visibility; y <= visibility; y++) {
 				level.getField(getPosition().getX()+x*16, getPosition().getY()+y*16)
 						.setVisible(false);
 			}
@@ -93,8 +119,9 @@ public class Unit extends Physical implements Iconifiable {
 
 	public void reveal() {
 		Level level = getParent().getLevel();
-		for (int x = -3; x < 4; x++) {
-			for (int y = -3; y < 4; y++) {
+		double visibility = level.getField(getPosition().getX(), getPosition().getY()).getVisibility();
+		for (double x = -visibility; x < visibility; x++) {
+			for (double y = -visibility; y < visibility; y++) {
 				level.getField(getPosition().getX()+x*16, getPosition().getY()+y*16)
 						.setVisible(true);
 			}
@@ -108,6 +135,14 @@ public class Unit extends Physical implements Iconifiable {
 		getParent().getUnits().remove(this);
 		if (getPlayer().isController())
 			getParent().getSelected().remove(this);
+	}
+
+	public void select() {
+		getParent().getSelected().add(this);
+	}
+
+	public void deselect() {
+		getParent().getSelected().remove(this);
 	}
 
 	@Nonnull
@@ -188,5 +223,17 @@ public class Unit extends Physical implements Iconifiable {
 
 	public double getReloadSpeed() {
 		return reloadSpeed;
+	}
+
+	public static final int UNMARKED = 0;
+
+	private int mark = UNMARKED;
+
+	public void setMark(int mark) {
+		this.mark = mark;
+	}
+
+	public int getMark() {
+		return mark;
 	}
 }

@@ -7,5 +7,6 @@ public class Plain extends Field {
 
     public Plain() {
         super(Color.WHEAT);
+        setVisibility(4.0);
     }
 }

@@ -47,6 +47,16 @@ public class Field implements Displayable {
         return height;
     }
 
+    private double visibility = 1;
+
+    public void setVisibility(double visibility) {
+        this.visibility = visibility;
+    }
+
+    public double getVisibility() {
+        return visibility;
+    }
+
     private boolean blocked = false;
 
     public void setBlocked(boolean blocked) {

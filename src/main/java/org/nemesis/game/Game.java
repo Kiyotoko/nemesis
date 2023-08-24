@@ -7,7 +7,6 @@ import java.util.List;
 import io.scvis.entity.Children;
 import io.scvis.entity.Parent;
 import io.scvis.geometry.Vector2D;
-import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -37,6 +36,8 @@ import org.nemesis.content.LevelLoader;
 
 import javax.annotation.Nonnull;
 
+import static javafx.animation.Animation.INDEFINITE;
+
 public class Game extends Scene implements Parent {
 
 	private final @Nonnull List<Children> entities = new ArrayList<>();
@@ -44,6 +45,7 @@ public class Game extends Scene implements Parent {
 	private final @Nonnull ObservableList<Player> players = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<Unit> units = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<Projectile> projectiles = FXCollections.observableArrayList();
+	private final @Nonnull ObservableList<Animation> animations = FXCollections.observableArrayList();
 
 	private final @Nonnull ObservableSet<Unit> selected = FXCollections.observableSet();
 
@@ -65,6 +67,7 @@ public class Game extends Scene implements Parent {
 		down.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, null, null)));
 		units.addListener(getGraphicListener(down));
 		projectiles.addListener(getGraphicListener(down));
+		animations.addListener(getGraphicListener(down));
 		down.getChildren().add(level.getGraphic());
 
 		SubScene subScene = new SubScene(down, 600, 600, true, SceneAntialiasing.BALANCED);
@@ -87,9 +90,12 @@ public class Game extends Scene implements Parent {
 
 		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 			if (e.getButton() == MouseButton.SECONDARY) {
+				Vector2D destination = new Vector2D(e.getSceneX() + camera.getLayoutX(),
+						e.getSceneY() + camera.getLayoutY());
 				for (Unit unit : getSelected()) {
-					unit.setDestination(
-							new Vector2D(e.getSceneX() + camera.getLayoutX(), e.getSceneY() + camera.getLayoutY()));
+					if (e.isShiftDown()) {
+						unit.getDestinations().add(destination);
+					} else unit.setDestination(destination);
 				}
 			}
 		});
@@ -118,7 +124,7 @@ public class Game extends Scene implements Parent {
 		subScene.heightProperty().bind(heightProperty());
 		subScene.setCamera(camera);
 
-		timeline.setCycleCount(Animation.INDEFINITE);
+		timeline.setCycleCount(INDEFINITE);
 		timeline.play();
 	}
 
@@ -148,16 +154,24 @@ public class Game extends Scene implements Parent {
 		return selected;
 	}
 
+	@Nonnull
 	public List<Player> getPlayers() {
 		return players;
 	}
 
+	@Nonnull
 	public List<Unit> getUnits() {
 		return units;
 	}
 
+	@Nonnull
 	public List<Projectile> getProjectiles() {
 		return projectiles;
+	}
+
+	@Nonnull
+	public ObservableList<Animation> getAnimations() {
+		return animations;
 	}
 
 	@Nonnull

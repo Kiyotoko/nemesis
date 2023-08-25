@@ -22,6 +22,7 @@ import javafx.scene.ParallelCamera;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -31,6 +32,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import org.nemesis.content.LevelLoader;
 
@@ -59,6 +61,8 @@ public class Game extends Scene implements Parent {
 	private double startX;
 	private double startY;
 	private boolean dragged = false;
+	private boolean selecting = false;
+
 
 	public Game(BorderPane pane) {
 		super(pane, 600, 600, true, SceneAntialiasing.BALANCED);
@@ -81,10 +85,14 @@ public class Game extends Scene implements Parent {
 		HBox bottom = new HBox(8);
 		bottom.setPadding(new Insets(10));
 		selected.addListener((SetChangeListener.Change<? extends Unit> change) -> {
-			if (change.wasAdded())
+			if (change.wasAdded()) {
 				bottom.getChildren().add(change.getElementAdded().getIcon());
-			if (change.wasRemoved())
+				change.getElementAdded().select();
+			}
+			if (change.wasRemoved()) {
 				bottom.getChildren().remove(change.getElementRemoved().getIcon());
+				change.getElementRemoved().deselect();
+			}
 		});
 		pane.setBottom(bottom);
 
@@ -99,25 +107,91 @@ public class Game extends Scene implements Parent {
 				}
 			}
 		});
+		Rectangle selection = new Rectangle();
+		selection.setFill(Color.color(Color.OLIVEDRAB.getRed(), Color.OLIVEDRAB.getGreen(), Color.OLIVEDRAB.getBlue(),
+				0.125));
+		selection.setStroke(Color.OLIVEDRAB);
+		down.getChildren().add(selection);
 		addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
-			if (e.getButton() == MouseButton.PRIMARY) {
+			if (e.getButton() == MouseButton.MIDDLE) {
 				if (dragged) {
 					int newX = (int) (camera.getLayoutX() - e.getSceneX() + startX);
 					int newY = (int) (camera.getLayoutY() - e.getSceneY() + startY);
 					camera.setLayoutX(newX);
 					camera.setLayoutY(newY);
-					startX = e.getSceneX();
-					startY = e.getSceneY();
+                } else {
+					dragged = true;
+					setCursor(Cursor.MOVE);
+                }
+                startX = e.getSceneX();
+                startY = e.getSceneY();
+            } else if (e.getButton() == MouseButton.PRIMARY) {
+				if (selecting) {
+					double width = camera.getLayoutX() + e.getSceneX() - startX;
+					double height = camera.getLayoutY() + e.getSceneY() - startY;
+					if (width < 0) {
+						selection.setWidth(-width);
+						selection.setX(startX + width);
+					} else {
+						selection.setWidth(width);
+						selection.setX(startX);
+					}
+					if (height < 0) {
+						selection.setHeight(-height);
+						selection.setY(startY + height);
+					} else {
+						selection.setHeight(height);
+						selection.setY(startY);
+					}
+				} else {
+					selecting = true;
+					startX = camera.getLayoutX() + e.getSceneX();
+					startY = camera.getLayoutY() + e.getSceneY();
+					selection.setX(startX);
+					selection.setY(startY);
+					selection.setVisible(true);
 				}
-				dragged = true;
-				setCursor(Cursor.MOVE);
-				startX = e.getSceneX();
-				startY = e.getSceneY();
 			}
 		});
 		addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
-			dragged = false;
-			setCursor(Cursor.DEFAULT);
+			if (dragged) {
+				dragged = false;
+				setCursor(Cursor.DEFAULT);
+			}
+			if (selecting) {
+				selecting = false;
+				selection.setVisible(false);
+				getSelected().clear();
+				if (Player.getController() != null) {
+					double minX = selection.getX();
+					double minY = selection.getY();
+					double maxX = minX + selection.getWidth();
+					double maxY = minY + selection.getWidth();
+					for (Unit unit : List.copyOf(Player.getController().getUnits())) {
+						Vector2D pos = unit.getPosition();
+						if (minX < pos.getX() && pos.getX() < maxX && (minY < pos.getY() && pos.getY() < maxY)) {
+							getSelected().add(unit);
+						}
+					}
+				}
+			}
+		});
+		addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+			switch (e.getCode()) {
+				case UP:
+					camera.setLayoutY(camera.getLayoutY() - 10);
+					break;
+				case DOWN:
+					camera.setLayoutY(camera.getLayoutY() + 10);
+					break;
+				case LEFT:
+					camera.setLayoutX(camera.getLayoutX() - 10);
+					break;
+				case RIGHT:
+					camera.setLayoutX(camera.getLayoutX() + 10);
+					break;
+				default: break;
+			}
 		});
 		pane.setBackground(new Background(new BackgroundFill(Color.gray(.25), null, null)));
 		subScene.widthProperty().bind(widthProperty());

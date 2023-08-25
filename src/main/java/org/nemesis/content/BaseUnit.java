@@ -33,13 +33,11 @@ public class BaseUnit extends Unit {
 
     @Override
     public void select() {
-        super.select();
         graphic.setStroke(Color.WHITE);
     }
 
     @Override
     public void deselect() {
-        super.deselect();
         graphic.setStroke(Color.BLACK);
     }
 }

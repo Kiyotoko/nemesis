@@ -7,6 +7,7 @@ import io.scvis.geometry.Vector2D;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import org.nemesis.content.PathAnimation;
 
 import java.util.List;
 import java.util.function.Function;
@@ -15,14 +16,16 @@ public class Unit extends Physical implements Iconifiable {
 
 	private final @Nonnull Pane icon = new Pane();
 
+	private PathAnimation animation;
+
 	public Unit(@Nonnull Player player, @Nonnull Vector2D position) {
 		super(player, position);
 		getGraphic().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (getPlayer().isController()) {
 					if (!e.isShiftDown())
-						List.copyOf(player.getGame().getSelected()).forEach(Unit::deselect);
-					select();
+						player.getGame().getSelected().clear();
+					player.getGame().getSelected().add(this);
 				}
 			} else if (e.getButton() == MouseButton.SECONDARY) {
 				if (!getPlayer().isController()) {
@@ -34,13 +37,14 @@ public class Unit extends Physical implements Iconifiable {
 		getGraphic().setVisible(getPlayer().isController());
 		getIcon().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 			if (e.getButton() == MouseButton.PRIMARY) {
-				List.copyOf(player.getGame().getSelected()).forEach(Unit::deselect);
-				select();
+				player.getGame().getSelected().clear();
+				player.getGame().getSelected().add(this);
 			} else if (e.getButton() == MouseButton.SECONDARY) {
-				deselect();
+				player.getGame().getSelected().remove(this);
 			}
 		});
 		setDestination(position);
+		if (getPlayer().isController()) animation = new PathAnimation(this);
 
 		getPlayer().getUnits().add(this);
 		getParent().getUnits().add(this);
@@ -133,16 +137,18 @@ public class Unit extends Physical implements Iconifiable {
 		super.destroy();
 		getPlayer().getUnits().remove(this);
 		getParent().getUnits().remove(this);
-		if (getPlayer().isController())
+		if (getPlayer().isController()) {
 			getParent().getSelected().remove(this);
+			animation.destroy();
+		}
 	}
 
 	public void select() {
-		getParent().getSelected().add(this);
+		// For override
 	}
 
 	public void deselect() {
-		getParent().getSelected().remove(this);
+		// For override
 	}
 
 	@Nonnull

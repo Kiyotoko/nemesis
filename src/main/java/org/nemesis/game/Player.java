@@ -88,9 +88,9 @@ public class Player implements Children, Identifiable, Displayable {
 	private static void select(int mark) {
 		if (getController() != null) {
 			Set<Unit> selected = getController().getParent().getSelected();
-			selected.forEach(Unit::deselect);
+			selected.clear();
 			for (Unit unit : getController().getUnits())
-				if (unit.getMark() == mark) unit.select();
+				if (unit.getMark() == mark) selected.add(unit);
 		}
 	}
 
@@ -100,7 +100,7 @@ public class Player implements Children, Identifiable, Displayable {
 				if (e.isControlDown()) {
 					switch (e.getCode()) {
 						case A:
-							getController().getUnits().forEach(Unit::select);
+							getController().getGame().getSelected().addAll(getController().getUnits());
 							break;
 						case S:
 							getController().getParent().getSelected().forEach(unit ->

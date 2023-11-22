@@ -1,22 +1,20 @@
 package org.nemesis.game;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import io.scvis.geometry.Vector2D;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
-import org.nemesis.content.PathAnimation;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Function;
 
-public class Unit extends Physical implements Iconifiable {
+public class Unit extends Physical implements Iconable {
 
 	private final @Nonnull Pane icon = new Pane();
 
-	private PathAnimation animation;
+	private @Nullable PathAnimation animation;
 
 	public Unit(@Nonnull Player player, @Nonnull Vector2D position) {
 		super(player, position);
@@ -44,7 +42,9 @@ public class Unit extends Physical implements Iconifiable {
 			}
 		});
 		setDestination(position);
-		if (getPlayer().isController()) animation = new PathAnimation(this);
+		if (getPlayer().isController()) {
+			animation = new PathAnimation(this);
+		}
 
 		getPlayer().getUnits().add(this);
 		getParent().getUnits().add(this);
@@ -57,30 +57,25 @@ public class Unit extends Physical implements Iconifiable {
 	}
 
 	@Override
-	public void accelerate(double deltaT) {
-		// No acceleration
-	}
-
-	@Override
-	public void velocitate(double deltaT) {
-		// No velocity
-	}
-
-	@Override
 	public void displacement(double deltaT) {
 		if (!getDestinations().isEmpty()) {
 			Vector2D difference = getDestination().subtract(getPosition());
 			if (difference.magnitude() > getSpeed()) {
 				Vector2D next = getPosition().add(difference.normalize().multiply(getSpeed()));
-				Level level = getParent().getLevel();
-				if (!level.getField(next.getX(), next.getY()).isBlocked()) {
-					if (getPlayer().isController()) hide();
-					setPosition(next);
+				Field field = getParent().getLevel().getField(next.getX(), next.getY());
+				if (field != null && !field.isBlocked()) {
+					collision:
+					{
+						for (Unit unit : getPlayer().getGame().getUnits()) {
+							if (unit != this && unit.getPosition().distance(next) < 16) break collision;
+						}
+						setPosition(next);
+					}
 				}
 			} else getDestinations().remove();
 		}
-		if (getPlayer().isController()) reveal();
-		else visible();
+		if (!getPlayer().isController())
+			visible();
 	}
 
 	public void shoot(double deltaT) {
@@ -99,7 +94,9 @@ public class Unit extends Physical implements Iconifiable {
 	}
 
 	public void visible() {
-		double difference = getParent().getLevel().getField(getPosition().getX(), getPosition().getY()).getVisibility() * 16.0;
+		Field field = getParent().getLevel().getField(getPosition().getX(), getPosition().getY());
+		if (field == null) return;
+		double difference = field.getSightDistance() * 16.0;
 		for (Unit unit : List.copyOf(getParent().getUnits())) {
 			if (unit.getPlayer() != getPlayer() && (Math.abs(unit.getPosition().getX() - getPosition().getX()) <
 					difference && Math.abs(unit.getPosition().getY() - getPosition().getY()) < difference)) {
@@ -110,24 +107,15 @@ public class Unit extends Physical implements Iconifiable {
 		getGraphic().setVisible(false);
 	}
 
-	public void hide() {
-		Level level = getParent().getLevel();
-		double visibility = level.getField(getPosition().getX(), getPosition().getY()).getVisibility();
-		for (double x = -visibility; x <= visibility; x++) {
-			for (double y = -visibility; y <= visibility; y++) {
-				level.getField(getPosition().getX()+x*16, getPosition().getY()+y*16)
-						.setVisible(false);
-			}
-		}
-	}
-
 	public void reveal() {
 		Level level = getParent().getLevel();
-		double visibility = level.getField(getPosition().getX(), getPosition().getY()).getVisibility();
+		Field inside = level.getField(getPosition().getX(), getPosition().getY());
+		if (inside == null) return;
+		double visibility = inside.getSightDistance();
 		for (double x = -visibility; x < visibility; x++) {
 			for (double y = -visibility; y < visibility; y++) {
-				level.getField(getPosition().getX()+x*16, getPosition().getY()+y*16)
-						.setVisible(true);
+				Field field = level.getField(getPosition().getX()+x*16, getPosition().getY()+y*16);
+				if (field != null) field.setHidden(true);
 			}
 		}
 	}
@@ -139,8 +127,16 @@ public class Unit extends Physical implements Iconifiable {
 		getParent().getUnits().remove(this);
 		if (getPlayer().isController()) {
 			getParent().getSelected().remove(this);
-			animation.destroy();
+			if (animation != null)
+				animation.destroy();
 		}
+	}
+
+	@Override
+	public void relocate() {
+		super.relocate();
+		if (getPlayer().isController())
+			reveal();
 	}
 
 	public void select() {

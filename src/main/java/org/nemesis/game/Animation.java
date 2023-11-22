@@ -13,6 +13,7 @@ public abstract class Animation extends Physical {
 
     @Override
     public void update(double deltaT) {
+        super.update(deltaT);
         animate(deltaT);
         count(deltaT);
     }
@@ -27,16 +28,6 @@ public abstract class Animation extends Physical {
     public void destroy() {
         super.destroy();
         getParent().getAnimations().remove(this);
-    }
-
-    @Override
-    public void accelerate(double deltaT) {
-        // No acceleration
-    }
-
-    @Override
-    public void velocitate(double deltaT) {
-        // No velocity
     }
 
     @Override

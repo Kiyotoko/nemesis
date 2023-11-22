@@ -1,42 +1,29 @@
 package org.nemesis.game;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import io.scvis.entity.Children;
 import io.scvis.entity.Parent;
 import io.scvis.geometry.Vector2D;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
-import javafx.collections.ObservableSet;
-import javafx.collections.SetChangeListener;
+import javafx.collections.*;
 import javafx.geometry.Insets;
-import javafx.scene.Camera;
-import javafx.scene.Cursor;
-import javafx.scene.ParallelCamera;
-import javafx.scene.Scene;
-import javafx.scene.SceneAntialiasing;
-import javafx.scene.SubScene;
+import javafx.scene.*;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import org.nemesis.content.LevelLoader;
 
 import javax.annotation.Nonnull;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static javafx.animation.Animation.INDEFINITE;
 
@@ -47,12 +34,10 @@ public class Game extends Scene implements Parent {
 	private final @Nonnull ObservableList<Player> players = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<Unit> units = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<Projectile> projectiles = FXCollections.observableArrayList();
+	private final @Nonnull ObservableList<ControlPoint> controlPoints = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<Animation> animations = FXCollections.observableArrayList();
 
 	private final @Nonnull ObservableSet<Unit> selected = FXCollections.observableSet();
-
-	private final @Nonnull Timeline timeline = new Timeline(
-			new KeyFrame(Duration.millis(50.0), e -> update(1.0)));
 
 	private final @Nonnull Level level = new LevelLoader(new File("src/main/resources/text/level/level.json"))
 			.getLoaded();
@@ -63,7 +48,6 @@ public class Game extends Scene implements Parent {
 	private boolean dragged = false;
 	private boolean selecting = false;
 
-
 	public Game(BorderPane pane) {
 		super(pane, 600, 600, true, SceneAntialiasing.BALANCED);
 
@@ -71,6 +55,7 @@ public class Game extends Scene implements Parent {
 		down.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, null, null)));
 		units.addListener(getGraphicListener(down));
 		projectiles.addListener(getGraphicListener(down));
+		controlPoints.addListener(getGraphicListener(down));
 		animations.addListener(getGraphicListener(down));
 		down.getChildren().add(level.getGraphic());
 
@@ -108,9 +93,8 @@ public class Game extends Scene implements Parent {
 			}
 		});
 		Rectangle selection = new Rectangle();
-		selection.setFill(Color.color(Color.OLIVEDRAB.getRed(), Color.OLIVEDRAB.getGreen(), Color.OLIVEDRAB.getBlue(),
-				0.125));
-		selection.setStroke(Color.OLIVEDRAB);
+		selection.setFill(Color.color(1, 1, 1, 0.125));
+		selection.setStroke(Color.WHITE);
 		down.getChildren().add(selection);
 		addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
 			if (e.getButton() == MouseButton.MIDDLE) {
@@ -198,8 +182,29 @@ public class Game extends Scene implements Parent {
 		subScene.heightProperty().bind(heightProperty());
 		subScene.setCamera(camera);
 
+		Timeline timeline = new Timeline(
+				new KeyFrame(Duration.millis(50.0), e -> update(1.0)));
 		timeline.setCycleCount(INDEFINITE);
 		timeline.play();
+	}
+
+	@Override
+	public void update(double deltaT) {
+		boolean render = Player.getController() != null;
+		Set<Field> oldRender = render ? Player.getController().getRenderFields() : null;
+		Parent.super.update(deltaT);
+		if (render) {
+			Set<Field> newRender = Player.getController().getRenderFields();
+			Set<Field> intersection = new HashSet<>(oldRender);
+			intersection.removeAll(newRender);
+			for (Field field : intersection) {
+				field.setHidden(false);
+			}
+			newRender.removeAll(oldRender);
+			for (Field field : newRender) {
+				field.setHidden(true);
+			}
+		}
 	}
 
 	private ListChangeListener<Displayable> getGraphicListener(Pane parent) {
@@ -216,11 +221,6 @@ public class Game extends Scene implements Parent {
 				for (int index = 0; index < change.getRemovedSize(); index++)
 					parent.getChildren().remove(change.getRemoved().get(index).getGraphic());
 		};
-	}
-
-	@Nonnull
-	public Timeline getTimeline() {
-		return timeline;
 	}
 
 	@Nonnull
@@ -241,6 +241,11 @@ public class Game extends Scene implements Parent {
 	@Nonnull
 	public List<Projectile> getProjectiles() {
 		return projectiles;
+	}
+
+	@Nonnull
+	public ObservableList<ControlPoint> getControlPoints() {
+		return controlPoints;
 	}
 
 	@Nonnull

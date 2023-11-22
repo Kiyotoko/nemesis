@@ -2,48 +2,45 @@ package org.nemesis.game;
 
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
 public class Level implements Displayable {
-
-    private static final @Nonnull Field VOID = new Field(Color.TRANSPARENT);
-    static  {
-        VOID.setBlocked(true);
-        VOID.setHeight(Integer.MAX_VALUE);
-    }
 
     private final @Nonnull Pane pane = new Pane();
 
     private final @Nonnull Field[][] fields;
 
-    private final int width;
-    private final int height;
-    private final double levelWidth;
-    private final double levelHeight;
+    private final int columns;
+    private final int rows;
+    private final double width;
+    private final double height;
 
-    public Level(int width, int height) {
-        this.width = width;
-        this.height = height;
-        this.levelWidth = width * 16.0;
-        this.levelHeight = height * 16.0;
+    public Level(int columns, int rows) {
+        this.columns = columns;
+        this.rows = rows;
+        this.width = columns * 16.0;
+        this.height = rows * 16.0;
 
-        fields = new Field[width][height];
+        fields = new Field[columns][rows];
     }
 
-    @Nonnull
+    public boolean isInside(double posX, double posY) {
+        return (posX >= 0 && posX <= width && posY >= 0 && posY <= height);
+    }
+
+    @CheckForNull
     public Field getField(double posX, double posY) {
-        if (posX < 0 || posX > levelWidth) return VOID;
-        if (posY < 0 || posY > levelHeight) return VOID;
+        if (!isInside(posX, posY)) return null;
         int x = (int) (posX / 16.0);
         int y = (int) (posY / 16.0);
         return fields[x][y];
     }
 
     public void setField(int x, int y, @Nonnull Field value) {
-        if (x < 0 || x > width) throw new ArrayIndexOutOfBoundsException();
-        if (y < 0 || y > height) throw new ArrayIndexOutOfBoundsException();
+        if (x < 0 || x > columns) throw new ArrayIndexOutOfBoundsException();
+        if (y < 0 || y > rows) throw new ArrayIndexOutOfBoundsException();
         fields[x][y] = value;
         pane.getChildren().add(value.getGraphic());
         value.getGraphic().setLayoutX(x * 16.0);
@@ -56,11 +53,11 @@ public class Level implements Displayable {
         return pane;
     }
 
-    public int getWidth() {
+    public double getWidth() {
         return width;
     }
 
-    public int getHeight() {
+    public double getHeight() {
         return height;
     }
 }

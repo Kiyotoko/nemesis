@@ -1,19 +1,23 @@
 package org.nemesis.game;
 
 import io.scvis.entity.Children;
-import io.scvis.entity.Kinetic;
 import io.scvis.geometry.Vector2D;
 import javafx.scene.layout.Pane;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
+import javax.annotation.OverridingMethodsMustInvokeSuper;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public abstract class Physical implements Displayable, Kinetic, Children {
+public abstract class Physical implements Displayable, Children {
 
     private final @Nonnull Player player;
-
     private final @Nonnull Pane pane = new Pane();
+    private final @Nonnull Deque<Vector2D> destinations = new ArrayDeque<>(4);
+
+    private @Nonnull Vector2D position;
+    private double speed = 1;
 
     protected Physical(@Nonnull Player player, @Nonnull Vector2D position) {
         this.player = player;
@@ -21,6 +25,14 @@ public abstract class Physical implements Displayable, Kinetic, Children {
 
         getParent().getChildren().add(this);
     }
+
+    @OverridingMethodsMustInvokeSuper
+    @Override
+    public void update(double deltaT) {
+        displacement(deltaT);
+    }
+
+    protected abstract void displacement(double deltaT);
 
     @Nonnull
     @Override
@@ -44,40 +56,36 @@ public abstract class Physical implements Displayable, Kinetic, Children {
         pane.setLayoutY(position.getY() - pane.getHeight() / 2);
     }
 
+    @CheckReturnValue
     @Nonnull
-    private Vector2D position;
+    public Vector2D getPosition() {
+        return position;
+    }
 
     public void setPosition(@Nonnull Vector2D position) {
         this.position = position;
         relocate();
     }
 
-    @Nonnull
-    public Vector2D getPosition() {
-        return position;
-    }
-
-    @Nonnull
-    private final Deque<Vector2D> destinations = new ArrayDeque<>(4);
-
-    public void setDestination(@Nonnull Vector2D destination) {
-        getDestinations().clear();
-        getDestinations().add(destination);
-    }
-
+    @CheckReturnValue
     @Nonnull
     public Vector2D getDestination() {
         final Vector2D checked = getDestinations().peek();
         return checked != null ? checked : getPosition();
     }
 
+    public void setDestination(@Nonnull Vector2D destination) {
+        getDestinations().clear();
+        getDestinations().add(destination);
+    }
+
+    @CheckReturnValue
     @Nonnull
     public Deque<Vector2D> getDestinations() {
         return destinations;
     }
 
-    private double speed = 1;
-
+    @CheckReturnValue
     public double getSpeed() {
         return speed;
     }

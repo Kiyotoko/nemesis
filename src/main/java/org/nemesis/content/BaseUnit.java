@@ -2,6 +2,7 @@ package org.nemesis.content;
 
 import io.scvis.geometry.Vector2D;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import org.nemesis.game.Player;
 import org.nemesis.game.Unit;
@@ -10,14 +11,16 @@ import javax.annotation.Nonnull;
 
 public class BaseUnit extends Unit {
 
-    private final @Nonnull Rectangle graphic;
+    private final @Nonnull Circle graphic;
 
     public BaseUnit(@Nonnull Player player, @Nonnull Vector2D position) {
         super(player, position);
-        this.graphic = new Rectangle(16, 16, player.getColor());
-        graphic.setStroke(Color.BLACK);
-        graphic.setStrokeWidth(2);
-        Rectangle icon = new Rectangle(16, 16, player.getColor());
+        this.graphic = new Circle(12, player.getColor());
+        graphic.setStroke(Color.WHITE);
+        graphic.setStrokeWidth(0);
+        graphic.setCenterX(12);
+        graphic.setCenterY(12);
+        Circle icon = new Circle(12, player.getColor());
         icon.setStroke(Color.WHITE);
         icon.setStrokeWidth(2);
 
@@ -33,11 +36,11 @@ public class BaseUnit extends Unit {
 
     @Override
     public void select() {
-        graphic.setStroke(Color.WHITE);
+        graphic.setStrokeWidth(2);
     }
 
     @Override
     public void deselect() {
-        graphic.setStroke(Color.BLACK);
+        graphic.setStrokeWidth(0);
     }
 }

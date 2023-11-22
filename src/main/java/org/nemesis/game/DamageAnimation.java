@@ -1,15 +1,13 @@
-package org.nemesis.content;
+package org.nemesis.game;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import org.nemesis.game.Animation;
-import org.nemesis.game.Projectile;
 
 import javax.annotation.Nonnull;
 
 public class DamageAnimation extends Animation {
 
-    private final Circle circle = new Circle();
+    private final @Nonnull Circle circle = new Circle();
 
     public DamageAnimation(@Nonnull Projectile projectile) {
         super(projectile.getPlayer(), projectile.getPosition());

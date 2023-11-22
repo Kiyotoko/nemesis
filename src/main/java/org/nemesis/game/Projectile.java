@@ -1,8 +1,9 @@
 package org.nemesis.game;
 
 import io.scvis.geometry.Vector2D;
-import org.nemesis.content.DamageAnimation;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Random;
@@ -21,16 +22,6 @@ public class Projectile extends Physical {
 
 		getParent().getProjectiles().add(this);
 		getParent().getChildren().add(this);
-	}
-
-	@Override
-	public void accelerate(double deltaT) {
-		// No acceleration
-	}
-
-	@Override
-	public void velocitate(double deltaT) {
-		// No velocity
 	}
 
 	@Override
@@ -53,7 +44,7 @@ public class Projectile extends Physical {
 		}
 	}
 
-	protected void hit(Unit unit) {
+	protected void hit(@Nonnull Unit unit) {
 		unit.setHitPoints(unit.getHitPoints() - Math.max(getDamage() +
 				random.nextInt((int) (1.0 + getCriticalChance())) * getCriticalDamage(), 0) / unit.getArmor());
 	}
@@ -87,6 +78,7 @@ public class Projectile extends Physical {
 
 	private double damage;
 
+	@CheckReturnValue
 	public double getDamage() {
 		return damage;
 	}
@@ -97,6 +89,7 @@ public class Projectile extends Physical {
 
 	private double criticalDamage;
 
+	@CheckReturnValue
 	public double getCriticalDamage() {
 		return criticalDamage;
 	}
@@ -107,6 +100,7 @@ public class Projectile extends Physical {
 
 	private double criticalChance;
 
+	@CheckReturnValue
 	public double getCriticalChance() {
 		return criticalChance;
 	}

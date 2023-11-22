@@ -8,16 +8,16 @@ import javax.annotation.Nonnull;
 
 public class Field implements Displayable {
 
-    private final Rectangle rect = new Rectangle(16,16);
+    private final @Nonnull Rectangle rect = new Rectangle(16,16);
 
-    private final Color viewed;
-    private final Color hidden;
+    private final @Nonnull Color colorViewed;
+    private final @Nonnull Color colorHidden;
 
-    public Field(Color color) {
-        this.viewed = color;
-        this.hidden = color.darker().darker().darker();
+    public Field(@Nonnull Color color) {
+        this.colorViewed = color;
+        this.colorHidden = color.darker().darker().darker();
 
-        setVisible(false);
+        setHidden(false);
     }
 
     @Nonnull
@@ -26,35 +26,25 @@ public class Field implements Displayable {
         return rect;
     }
 
-    private boolean visible;
+    private boolean hidden;
 
-    public boolean isVisible() {
-        return visible;
+    public boolean isHidden() {
+        return hidden;
     }
 
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-        rect.setFill(isVisible() ? viewed : hidden);
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
+        rect.setFill(isHidden() ? colorViewed : colorHidden);
     }
 
-    private int height = 0;
+    private double sightDistance = 1;
 
-    public void setHeight(int height) {
-        this.height = height;
+    public void setSightDistance(double sightDistance) {
+        this.sightDistance = sightDistance;
     }
 
-    public int getHeight() {
-        return height;
-    }
-
-    private double visibility = 1;
-
-    public void setVisibility(double visibility) {
-        this.visibility = visibility;
-    }
-
-    public double getVisibility() {
-        return visibility;
+    public double getSightDistance() {
+        return sightDistance;
     }
 
     private boolean blocked = false;

@@ -2,6 +2,7 @@ package org.nemesis;
 
 import io.scvis.geometry.Vector2D;
 import org.nemesis.content.BaseUnit;
+import org.nemesis.game.ControlPoint;
 import org.nemesis.game.Game;
 import org.nemesis.game.Player;
 
@@ -16,19 +17,21 @@ public class App extends Application {
 	public void start(Stage stage) {
 		Game game = new Game(new BorderPane());
 		game.setOnKeyPressed(Player.getKeyEventHandler());
+		for (int i = 1; i < 3; i++)
+			new ControlPoint(game, new Vector2D(game.getLevel().getWidth() * i * 0.33333, game.getLevel().getHeight() * 0.5));
 
 		Player player = new Player(game);
 		player.markAsController();
 		player.setName("Player");
-		player.setColor(Color.BLUE);
-		for (int i = 0; i < 5; i++)
-			new BaseUnit(player, new Vector2D(128.0, 128.0 + 32.0 * i));
+		player.setColor(Color.LIGHTBLUE);
+		for (int i = -2; i < 3; i++)
+			new BaseUnit(player, new Vector2D(game.getLevel().getWidth() * 0.5 + 48.0 * i, game.getLevel().getHeight() * 0.15));
 
 		Player computer = new Player(game);
 		computer.setName("Computer");
-		computer.setColor(Color.RED);
-		for (int i = 0; i < 5; i++)
-			new BaseUnit(computer, new Vector2D(512.0, 512.0 - 32.0 * i));
+		computer.setColor(Color.ORANGERED);
+		for (int i = -2; i < 3; i++)
+			new BaseUnit(computer, new Vector2D(game.getLevel().getWidth() * 0.5 + 48.0 * i, game.getLevel().getHeight() * 0.85));
 
 		stage.setScene(game);
 		stage.show();

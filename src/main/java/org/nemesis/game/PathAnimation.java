@@ -1,14 +1,12 @@
-package org.nemesis.content;
+package org.nemesis.game;
 
 import io.scvis.geometry.Vector2D;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
-import org.nemesis.game.Animation;
-import org.nemesis.game.Unit;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import java.util.Deque;
 
@@ -65,12 +63,14 @@ public class PathAnimation extends Animation {
 
     @Override
     public void relocate() {
-
+        // Nothing to do
     }
 
-    private static Line create() {
+    @CheckReturnValue
+    @Nonnull
+    private Line create() {
         Line path = new Line();
-        path.setStroke(Color.OLIVEDRAB);
+        path.setStroke(unit.getPlayer().getColor());
         return path;
     }
 }

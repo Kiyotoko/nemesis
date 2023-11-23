@@ -39,23 +39,13 @@
   ],
   "types": {
     "1": {
-      "color": {
-        "red": 0.3,
-        "green": 0.3,
-        "blue": 0.3,
-        "opacity": 1.0
-      },
+      "color": "0x4c4c4c",
       "sightDistance": 2.8,
       "blocked": false
     },
     "2": {
-      "color": {
-        "red": 0.8627451,
-        "green": 0.078431375,
-        "blue": 0.23529412,
-        "opacity": 1.0
-      },
-      "sightDistance": 1,
+      "color": "0xdc143c",
+      "sightDistance": 1.0,
       "blocked": true
     }
   },

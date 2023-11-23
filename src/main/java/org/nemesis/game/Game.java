@@ -1,13 +1,11 @@
 package org.nemesis.game;
 
-import io.scvis.entity.Children;
-import io.scvis.entity.Parent;
-import io.scvis.geometry.Vector2D;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.collections.*;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -19,7 +17,6 @@ import javafx.util.Duration;
 import org.nemesis.content.LevelLoader;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -27,9 +24,9 @@ import java.util.Set;
 
 import static javafx.animation.Animation.INDEFINITE;
 
-public class Game extends Scene implements Parent {
+public class Game extends Scene implements Entity {
 
-	private final @Nonnull List<Children> entities = new ArrayList<>();
+	private final @Nonnull List<Entity> entities = new ArrayList<>();
 
 	private final @Nonnull ObservableList<Player> players = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<Unit> units = FXCollections.observableArrayList();
@@ -39,8 +36,7 @@ public class Game extends Scene implements Parent {
 
 	private final @Nonnull ObservableSet<Unit> selected = FXCollections.observableSet();
 
-	private final @Nonnull Level level = new LevelLoader(new File("src/main/resources/text/level/level.json"))
-			.getLoaded();
+	private final @Nonnull Level level = new LevelLoader("level.json").getLoaded();
 
 	private final @Nonnull Camera camera = new ParallelCamera();
 	private double startX;
@@ -83,7 +79,7 @@ public class Game extends Scene implements Parent {
 
 		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 			if (e.getButton() == MouseButton.SECONDARY) {
-				Vector2D destination = new Vector2D(e.getSceneX() + camera.getLayoutX(),
+				Point2D destination = new Point2D(e.getSceneX() + camera.getLayoutX(),
 						e.getSceneY() + camera.getLayoutY());
 				for (Unit unit : getSelected()) {
 					if (e.isShiftDown()) {
@@ -152,7 +148,7 @@ public class Game extends Scene implements Parent {
 					double maxX = minX + selection.getWidth();
 					double maxY = minY + selection.getWidth();
 					for (Unit unit : List.copyOf(Player.getController().getUnits())) {
-						Vector2D pos = unit.getPosition();
+						Point2D pos = unit.getPosition();
 						if (minX < pos.getX() && pos.getX() < maxX && (minY < pos.getY() && pos.getY() < maxY)) {
 							getSelected().add(unit);
 						}
@@ -183,16 +179,16 @@ public class Game extends Scene implements Parent {
 		subScene.setCamera(camera);
 
 		Timeline timeline = new Timeline(
-				new KeyFrame(Duration.millis(50.0), e -> update(1.0)));
+				new KeyFrame(Duration.millis(50.0), e -> update()));
 		timeline.setCycleCount(INDEFINITE);
 		timeline.play();
 	}
 
 	@Override
-	public void update(double deltaT) {
+	public void update() {
 		boolean render = Player.getController() != null;
 		Set<Field> oldRender = render ? Player.getController().getRenderFields() : null;
-		Parent.super.update(deltaT);
+		for (Entity entity : List.copyOf(entities)) entity.update();
 		if (render) {
 			Set<Field> newRender = Player.getController().getRenderFields();
 			Set<Field> intersection = new HashSet<>(oldRender);
@@ -254,8 +250,7 @@ public class Game extends Scene implements Parent {
 	}
 
 	@Nonnull
-	@Override
-	public List<Children> getChildren() {
+	public List<Entity> getEntities() {
 		return entities;
 	}
 

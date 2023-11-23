@@ -1,8 +1,7 @@
 package org.nemesis.game;
 
-import io.scvis.geometry.Vector2D;
+import javafx.geometry.Point2D;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -19,15 +18,13 @@ public class Projectile extends Physical {
 			setDestination(unit.getPosition());
 		}
 		setRotation(getPosition().angle(getDestination()));
-
-		getParent().getProjectiles().add(this);
-		getParent().getChildren().add(this);
+		getGame().getProjectiles().add(this);
 	}
 
 	@Override
-	public void displacement(double deltaT) {
+	public void displacement() {
 		setPosition(getPosition().add(
-				new Vector2D(-Math.cos(getRotation()), -Math.sin(getRotation())).multiply(getSpeed())));
+				new Point2D(-Math.cos(getRotation()), -Math.sin(getRotation())).multiply(getSpeed())));
 		setRange(getRange() - getSpeed());
 		check();
 	}
@@ -35,7 +32,7 @@ public class Projectile extends Physical {
 	private static final @Nonnull Random random = new Random();
 
 	protected void check() {
-		for (Unit unit : List.copyOf(getParent().getUnits())) {
+		for (Unit unit : List.copyOf(getGame().getUnits())) {
 			if (unit.getPlayer() != getPlayer() && (unit.getPosition().distance(getPosition()) < 10)) {
 				hit(unit);
 				new DamageAnimation(this);
@@ -52,7 +49,7 @@ public class Projectile extends Physical {
 	@Override
 	public void destroy() {
 		super.destroy();
-		getParent().getProjectiles().remove(this);
+		getGame().getProjectiles().remove(this);
 	}
 
 	private double rotation;

@@ -1,6 +1,6 @@
 package org.nemesis.game;
 
-import io.scvis.geometry.Vector2D;
+import javafx.geometry.Point2D;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -16,7 +16,7 @@ public class Unit extends Physical implements Iconable {
 
 	private @Nullable PathAnimation animation;
 
-	public Unit(@Nonnull Player player, @Nonnull Vector2D position) {
+	public Unit(@Nonnull Player player, @Nonnull Point2D position) {
 		super(player, position);
 		getGraphic().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 			if (e.getButton() == MouseButton.PRIMARY) {
@@ -27,7 +27,7 @@ public class Unit extends Physical implements Iconable {
 				}
 			} else if (e.getButton() == MouseButton.SECONDARY) {
 				if (!getPlayer().isController()) {
-					getParent().getSelected().forEach(unit -> unit.setTarget(this));
+					getGame().getSelected().forEach(unit -> unit.setTarget(this));
 				}
 			}
 		});
@@ -47,22 +47,22 @@ public class Unit extends Physical implements Iconable {
 		}
 
 		getPlayer().getUnits().add(this);
-		getParent().getUnits().add(this);
+		getGame().getUnits().add(this);
 	}
 
 	@Override
-	public void update(double deltaT) {
-		super.update(deltaT);
-		shoot(deltaT);
+	public void update() {
+		super.update();
+		shoot();
 	}
 
 	@Override
-	public void displacement(double deltaT) {
+	public void displacement() {
 		if (!getDestinations().isEmpty()) {
-			Vector2D difference = getDestination().subtract(getPosition());
+			Point2D difference = getDestination().subtract(getPosition());
 			if (difference.magnitude() > getSpeed()) {
-				Vector2D next = getPosition().add(difference.normalize().multiply(getSpeed()));
-				Field field = getParent().getLevel().getField(next.getX(), next.getY());
+				Point2D next = getPosition().add(difference.normalize().multiply(getSpeed()));
+				Field field = getGame().getLevel().getField(next.getX(), next.getY());
 				if (field != null && !field.isBlocked()) {
 					collision:
 					{
@@ -78,7 +78,7 @@ public class Unit extends Physical implements Iconable {
 			visible();
 	}
 
-	public void shoot(double deltaT) {
+	public void shoot() {
 		if (hasTarget() && !isReloading()) {
 			if (getTarget().getHitPoints() > 0) {
 				Function<Unit, Projectile> creator = getProjectileCreator();
@@ -90,14 +90,14 @@ public class Unit extends Physical implements Iconable {
 				setTarget(null);
 			}
 		}
-		setReloadTime(Math.max(getReloadTime() - deltaT, 0));
+		setReloadTime(Math.max(getReloadTime() - 1, 0));
 	}
 
 	public void visible() {
-		Field field = getParent().getLevel().getField(getPosition().getX(), getPosition().getY());
+		Field field = getGame().getLevel().getField(getPosition().getX(), getPosition().getY());
 		if (field == null) return;
 		double difference = field.getSightDistance() * 16.0;
-		for (Unit unit : List.copyOf(getParent().getUnits())) {
+		for (Unit unit : List.copyOf(getGame().getUnits())) {
 			if (unit.getPlayer() != getPlayer() && (Math.abs(unit.getPosition().getX() - getPosition().getX()) <
 					difference && Math.abs(unit.getPosition().getY() - getPosition().getY()) < difference)) {
 				getGraphic().setVisible(true);
@@ -108,7 +108,7 @@ public class Unit extends Physical implements Iconable {
 	}
 
 	public void reveal() {
-		Level level = getParent().getLevel();
+		Level level = getGame().getLevel();
 		Field inside = level.getField(getPosition().getX(), getPosition().getY());
 		if (inside == null) return;
 		double visibility = inside.getSightDistance();
@@ -122,11 +122,10 @@ public class Unit extends Physical implements Iconable {
 
 	@Override
 	public void destroy() {
-		super.destroy();
 		getPlayer().getUnits().remove(this);
-		getParent().getUnits().remove(this);
+		getGame().getUnits().remove(this);
 		if (getPlayer().isController()) {
-			getParent().getSelected().remove(this);
+			getGame().getSelected().remove(this);
 			if (animation != null)
 				animation.destroy();
 		}

@@ -19,7 +19,7 @@ public class DamageAnimation extends Animation {
     }
 
     @Override
-    public void animate(double deltaT) {
-        circle.setRadius(circle.getRadius() + deltaT);
+    public void animate() {
+        circle.setRadius(circle.getRadius() + 1);
     }
 }

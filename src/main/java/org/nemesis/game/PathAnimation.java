@@ -1,9 +1,9 @@
 package org.nemesis.game;
 
-import io.scvis.geometry.Vector2D;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Point2D;
 import javafx.scene.shape.Line;
 
 import javax.annotation.CheckReturnValue;
@@ -34,8 +34,8 @@ public class PathAnimation extends Animation {
     }
 
     @Override
-    public void animate(double deltaT) {
-        Deque<Vector2D> destinations = unit.getDestinations();
+    public void animate() {
+        Deque<Point2D> destinations = unit.getDestinations();
         int size = destinations.size();
         while (size > paths.size()) {
             paths.add(create());
@@ -43,9 +43,9 @@ public class PathAnimation extends Animation {
         while (size < paths.size()) {
             paths.remove(paths.size() - 1);
         }
-        Vector2D previous = null;
+        Point2D previous = null;
         int i = 0;
-        for (Vector2D destination : destinations) {
+        for (Point2D destination : destinations) {
             Line path = paths.get(i);
             if (previous == null) {
                 path.setStartX(unit.getPosition().getX());

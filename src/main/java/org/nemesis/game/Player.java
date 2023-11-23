@@ -1,7 +1,5 @@
 package org.nemesis.game;
 
-import io.scvis.entity.Children;
-import io.scvis.proto.Identifiable;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -22,7 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class Player implements Children, Identifiable, Displayable {
+public class Player implements Entity, Destroyable, Displayable {
 
     private static @Nullable Player controller;
     private final @Nonnull ObservableList<Unit> units = FXCollections.observableArrayList();
@@ -44,8 +42,8 @@ public class Player implements Children, Identifiable, Displayable {
         };
         units.addListener(listener);
 
-        getParent().getPlayers().add(this);
-        getParent().getChildren().add(this);
+        getGame().getPlayers().add(this);
+        getGame().getEntities().add(this);
     }
 
     @CheckForNull
@@ -57,7 +55,7 @@ public class Player implements Children, Identifiable, Displayable {
         if (getController() != null) {
             for (Unit unit : getController().getUnits())
                 if (unit.getMark() == mark) unit.setMark(Unit.UNMARKED);
-            Set<Unit> selected = getController().getParent().getSelected();
+            Set<Unit> selected = getController().getGame().getSelected();
             for (Unit unit : selected) {
                 unit.setMark(mark);
             }
@@ -66,7 +64,7 @@ public class Player implements Children, Identifiable, Displayable {
 
     private static void select(int mark) {
         if (getController() != null) {
-            Set<Unit> selected = getController().getParent().getSelected();
+            Set<Unit> selected = getController().getGame().getSelected();
             selected.clear();
             for (Unit unit : getController().getUnits())
                 if (unit.getMark() == mark) selected.add(unit);
@@ -84,11 +82,11 @@ public class Player implements Children, Identifiable, Displayable {
                             getController().getGame().getSelected().addAll(getController().getUnits());
                             break;
                         case S:
-                            getController().getParent().getSelected().forEach(unit ->
+                            getController().getGame().getSelected().forEach(unit ->
                                     unit.setDestination(unit.getPosition()));
                             break;
                         case D:
-                            getController().getParent().getSelected().forEach(unit ->
+                            getController().getGame().getSelected().forEach(unit ->
                                     unit.setTarget(null));
                             break;
                         case DIGIT1:
@@ -165,15 +163,14 @@ public class Player implements Children, Identifiable, Displayable {
     }
 
     @Override
-    public void update(double deltaT) {
+    public void update() {
         // Nothing to update
     }
 
     @Override
     public void destroy() {
-        Children.super.destroy();
         getGame().getPlayers().remove(this);
-        getParent().getChildren().remove(this);
+        getGame().getEntities().remove(this);
     }
 
     public void markAsController() {
@@ -186,7 +183,7 @@ public class Player implements Children, Identifiable, Displayable {
     }
 
     public @Nonnull Set<Field> getRenderFields() {
-        Level level = getParent().getLevel();
+        Level level = getGame().getLevel();
         Set<Field> fields = new HashSet<>();
         for (Unit unit : getUnits()) {
             Field current = level.getField(unit.getPosition().getX(), unit.getPosition().getY());
@@ -205,12 +202,6 @@ public class Player implements Children, Identifiable, Displayable {
     @Nonnull
     public List<Unit> getUnits() {
         return units;
-    }
-
-    @Nonnull
-    @Override
-    public Game getParent() {
-        return getGame();
     }
 
     @Nonnull

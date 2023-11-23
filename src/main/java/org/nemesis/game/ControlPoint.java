@@ -1,8 +1,6 @@
 package org.nemesis.game;
 
-import io.scvis.entity.Children;
-import io.scvis.entity.Parent;
-import io.scvis.geometry.Vector2D;
+import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
@@ -12,20 +10,20 @@ import org.nemesis.content.BaseUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ControlPoint implements Children, Displayable {
+public class ControlPoint implements Entity, Destroyable, Displayable {
 
     private static final double range = 35;
 
     private final @Nonnull Group group = new Group();
     private final @Nonnull Circle indic = new Circle();
     private final @Nonnull Game game;
-    private final @Nonnull Vector2D position;
+    private final @Nonnull Point2D position;
 
     private @Nullable Player controller;
     private double control = 0;
     private double controlTime = 0;
 
-    public ControlPoint(@Nonnull Game game, @Nonnull Vector2D position) {
+    public ControlPoint(@Nonnull Game game, @Nonnull Point2D position) {
         this.game = game;
         this.position = position;
         Circle base = new Circle(range, Color.gray(0.8, 0.5));
@@ -36,17 +34,17 @@ public class ControlPoint implements Children, Displayable {
         group.setLayoutX(position.getX());
         group.setLayoutY(position.getY());
         game.getControlPoints().add(this);
-        game.getChildren().add(this);
+        game.getEntities().add(this);
     }
 
     @Override
-    public void update(double deltaT) {
+    public void update() {
         for (Unit unit : game.getUnits()) {
             if (unit.getPosition().distance(position) <= range) {
                 if (controller == unit.getPlayer()) {
-                    control += deltaT * 0.005;
+                    control += 0.005;
                 } else {
-                    control -= deltaT * 0.005;
+                    control -= 0.005;
                     if (control <= 0) {
                         controller = unit.getPlayer();
                         indic.setFill(Color.color(controller.getColor().getRed(), controller.getColor().getGreen(),
@@ -58,7 +56,7 @@ public class ControlPoint implements Children, Displayable {
             }
         }
         if (control >= 1 && controller != null) {
-            controlTime += deltaT * 0.065;
+            controlTime += 0.065;
             if (controlTime >= 20) {
                 new BaseUnit(controller, position);
                 controlTime -= 20;
@@ -68,15 +66,15 @@ public class ControlPoint implements Children, Displayable {
         indic.setRadius(control * range);
     }
 
-    @Nonnull
     @Override
-    public Node getGraphic() {
-        return group;
+    public void destroy() {
+        game.getControlPoints().remove(this);
+        game.getEntities().remove(this);
     }
 
     @Nonnull
     @Override
-    public Parent getParent() {
-        return game;
+    public Node getGraphic() {
+        return group;
     }
 }

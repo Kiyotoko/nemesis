@@ -5,10 +5,10 @@ import javafx.scene.paint.Color;
 import org.nemesis.game.Field;
 import org.nemesis.game.Level;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Serializable;
+import javax.annotation.CheckReturnValue;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.*;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -16,16 +16,20 @@ public class LevelLoader {
 
     public static class FieldSource implements Serializable, Supplier<Field> {
 
-        private final Color color;
+        private final @Nonnull String color;
         private final double sightDistance;
         private final boolean blocked;
 
-        FieldSource(Color color, double sightDistance, boolean blocked) {
+        FieldSource(@Nonnull String color, double sightDistance, boolean blocked) {
             this.color = color;
             this.sightDistance = sightDistance;
             this.blocked = blocked;
         }
 
+        private transient @Nullable Color loaded;
+
+        @CheckReturnValue
+        @Nonnull
         @Override
         public Field get() {
             Field build = new Field(getColor());
@@ -34,14 +38,19 @@ public class LevelLoader {
             return build;
         }
 
+        @CheckReturnValue
+        @Nonnull
         public Color getColor() {
-            return color;
+            if (loaded == null) loaded = Color.web(color);
+            return loaded;
         }
 
+        @CheckReturnValue
         public double getSightDistance() {
             return sightDistance;
         }
 
+        @CheckReturnValue
         public boolean isBlocked() {
             return blocked;
         }
@@ -80,9 +89,9 @@ public class LevelLoader {
 
     private final Level loaded;
 
-    public LevelLoader(File file) {
-        try (FileReader reader = new FileReader(file)) {
-            LevelLoader.BundleSource bundle = gson.fromJson(reader, LevelLoader.BundleSource.class);
+    public LevelLoader(String file) {
+        try (InputStream stream = Objects.requireNonNull(LevelLoader.class.getResourceAsStream(file))) {
+            LevelLoader.BundleSource bundle = gson.fromJson(new String(stream.readAllBytes()), LevelLoader.BundleSource.class);
             Objects.requireNonNull(bundle);
             loaded = buildBundle(bundle);
         } catch (IOException e) {

@@ -1,37 +1,37 @@
 package org.nemesis.game;
 
-import io.scvis.geometry.Vector2D;
+import javafx.geometry.Point2D;
 
 import javax.annotation.Nonnull;
 
 public abstract class Animation extends Physical {
 
-    protected Animation(@Nonnull Player player, @Nonnull Vector2D position) {
+    protected Animation(@Nonnull Player player, @Nonnull Point2D position) {
         super(player, position);
-        getParent().getAnimations().add(this);
+        getGame().getAnimations().add(this);
     }
 
     @Override
-    public void update(double deltaT) {
-        super.update(deltaT);
-        animate(deltaT);
-        count(deltaT);
+    public void update() {
+        super.update();
+        animate();
+        count();
     }
 
-    public abstract void animate(double deltaT);
+    public abstract void animate();
 
-    public void count(double deltaT) {
-        setAnimationTime(getAnimationTime() + deltaT);
+    public void count() {
+        setAnimationTime(getAnimationTime() + 1);
     }
 
     @Override
     public void destroy() {
         super.destroy();
-        getParent().getAnimations().remove(this);
+        getGame().getAnimations().remove(this);
     }
 
     @Override
-    public void displacement(double deltaT) {
+    public void displacement() {
         // No displacement
     }
 

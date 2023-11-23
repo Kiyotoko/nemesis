@@ -1,9 +1,8 @@
 package org.nemesis.content;
 
-import io.scvis.geometry.Vector2D;
+import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
 import org.nemesis.game.Player;
 import org.nemesis.game.Unit;
 
@@ -13,7 +12,7 @@ public class BaseUnit extends Unit {
 
     private final @Nonnull Circle graphic;
 
-    public BaseUnit(@Nonnull Player player, @Nonnull Vector2D position) {
+    public BaseUnit(@Nonnull Player player, @Nonnull Point2D position) {
         super(player, position);
         this.graphic = new Circle(12, player.getColor());
         graphic.setStroke(Color.WHITE);

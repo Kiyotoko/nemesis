@@ -1,7 +1,6 @@
 package org.nemesis.game;
 
-import io.scvis.entity.Children;
-import io.scvis.geometry.Vector2D;
+import javafx.geometry.Point2D;
 import javafx.scene.layout.Pane;
 
 import javax.annotation.CheckReturnValue;
@@ -10,39 +9,43 @@ import javax.annotation.OverridingMethodsMustInvokeSuper;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public abstract class Physical implements Displayable, Children {
+public abstract class Physical implements Displayable, Entity, Destroyable {
 
     private final @Nonnull Player player;
     private final @Nonnull Pane pane = new Pane();
-    private final @Nonnull Deque<Vector2D> destinations = new ArrayDeque<>(4);
+    private final @Nonnull Deque<Point2D> destinations = new ArrayDeque<>(4);
 
-    private @Nonnull Vector2D position;
+    private @Nonnull Point2D position;
     private double speed = 1;
 
-    protected Physical(@Nonnull Player player, @Nonnull Vector2D position) {
+    protected Physical(@Nonnull Player player, @Nonnull Point2D position) {
         this.player = player;
         this.position = position;
 
-        getParent().getChildren().add(this);
+        getGame().getEntities().add(this);
     }
 
     @OverridingMethodsMustInvokeSuper
     @Override
-    public void update(double deltaT) {
-        displacement(deltaT);
+    public void update() {
+        displacement();
     }
 
-    protected abstract void displacement(double deltaT);
-
-    @Nonnull
     @Override
-    public Game getParent() {
-        return getPlayer().getGame();
+    public void destroy() {
+        getGame().getEntities().remove(this);
     }
+
+    protected abstract void displacement();
 
     @Nonnull
     public Player getPlayer() {
         return player;
+    }
+
+    @Nonnull
+    public Game getGame() {
+        return player.getGame();
     }
 
     @Nonnull
@@ -58,30 +61,30 @@ public abstract class Physical implements Displayable, Children {
 
     @CheckReturnValue
     @Nonnull
-    public Vector2D getPosition() {
+    public Point2D getPosition() {
         return position;
     }
 
-    public void setPosition(@Nonnull Vector2D position) {
+    public void setPosition(@Nonnull Point2D position) {
         this.position = position;
         relocate();
     }
 
     @CheckReturnValue
     @Nonnull
-    public Vector2D getDestination() {
-        final Vector2D checked = getDestinations().peek();
+    public Point2D getDestination() {
+        final Point2D checked = getDestinations().peek();
         return checked != null ? checked : getPosition();
     }
 
-    public void setDestination(@Nonnull Vector2D destination) {
+    public void setDestination(@Nonnull Point2D destination) {
         getDestinations().clear();
         getDestinations().add(destination);
     }
 
     @CheckReturnValue
     @Nonnull
-    public Deque<Vector2D> getDestinations() {
+    public Deque<Point2D> getDestinations() {
         return destinations;
     }
 

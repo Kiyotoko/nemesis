@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 
 public class ControlPoint implements Entity, Destroyable, Displayable {
 
-    private static final double range = 35;
+    private static final double CONTROL_POINT_RANGE = 40;
 
     private final @Nonnull Group group = new Group();
     private final @Nonnull Circle indic = new Circle();
@@ -26,7 +26,7 @@ public class ControlPoint implements Entity, Destroyable, Displayable {
     public ControlPoint(@Nonnull Game game, @Nonnull Point2D position) {
         this.game = game;
         this.position = position;
-        Circle base = new Circle(range, Color.gray(0.8, 0.5));
+        Circle base = new Circle(CONTROL_POINT_RANGE, Color.gray(0.8, 0.5));
         base.setStrokeWidth(2);
         base.setStroke(Color.WHITE);
         group.getChildren().add(base);
@@ -40,7 +40,7 @@ public class ControlPoint implements Entity, Destroyable, Displayable {
     @Override
     public void update() {
         for (Unit unit : game.getUnits()) {
-            if (unit.getPosition().distance(position) <= range) {
+            if (unit.getPosition().distance(position) <= CONTROL_POINT_RANGE) {
                 if (controller == unit.getPlayer()) {
                     control += 0.005;
                 } else {
@@ -63,7 +63,7 @@ public class ControlPoint implements Entity, Destroyable, Displayable {
             }
             control = 1;
         }
-        indic.setRadius(control * range);
+        indic.setRadius(control * CONTROL_POINT_RANGE);
     }
 
     @Override

@@ -26,10 +26,9 @@
 			<version>2.10.1</version>
 		</dependency>
 		<dependency>
-			<groupId>com.github.spotbugs</groupId>
-			<artifactId>spotbugs</artifactId>
-			<version>4.8.1</version>
-			<scope>provided</scope>
+			<groupId>com.google.code.findbugs</groupId>
+			<artifactId>annotations</artifactId>
+			<version>3.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -82,32 +81,13 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.5.1</version>
-				<configuration>
-					<transformers>
-						<transformer
-							implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-					</transformers>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.6</version>
+				<version>3.3.0</version>
 				<configuration>
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<classpathPrefix>libs/</classpathPrefix>
+							<classpathPrefix>lib/</classpathPrefix>
 							<mainClass>${project.mainClass}</mainClass>
 							<packageName>dionysius</packageName>
 						</manifest>
@@ -120,13 +100,13 @@
 				<version>2.4.1</version>
 				<executions>
 					<execution>
-						<phase>install</phase>
+						<phase>package</phase>
 						<goals>
 							<goal>launch4j</goal>
 						</goals>
 						<configuration>
 							<headerType>gui</headerType>
-							<jar>${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar</jar>
+							<jar>${project.build.directory}/${project.artifactId}-${project.version}.jar</jar>
 							<outfile>${project.build.directory}/${project.artifactId}.exe</outfile>
 							<downloadUrl>http://java.com/download</downloadUrl>
 							<classPath>

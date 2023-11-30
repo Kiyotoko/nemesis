@@ -18,29 +18,8 @@ public class Unit extends Physical implements Iconable {
 
 	public Unit(@Nonnull Player player, @Nonnull Point2D position) {
 		super(player, position);
-		getGraphic().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-			if (e.getButton() == MouseButton.PRIMARY) {
-				if (getPlayer().isController()) {
-					if (!e.isShiftDown())
-						player.getGame().getSelected().clear();
-					player.getGame().getSelected().add(this);
-				}
-			} else if (e.getButton() == MouseButton.SECONDARY) {
-				if (!getPlayer().isController()) {
-					getGame().getSelected().forEach(unit -> unit.setTarget(this));
-				}
-			}
-		});
-		getGraphic().setPickOnBounds(true);
+		addEventHandler();
 		getGraphic().setVisible(getPlayer().isController());
-		getIcon().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-			if (e.getButton() == MouseButton.PRIMARY) {
-				player.getGame().getSelected().clear();
-				player.getGame().getSelected().add(this);
-			} else if (e.getButton() == MouseButton.SECONDARY) {
-				player.getGame().getSelected().remove(this);
-			}
-		});
 		setDestination(position);
 		if (getPlayer().isController()) {
 			animation = new PathAnimation(this);
@@ -62,16 +41,7 @@ public class Unit extends Physical implements Iconable {
 			Point2D difference = getDestination().subtract(getPosition());
 			if (difference.magnitude() > getSpeed()) {
 				Point2D next = getPosition().add(difference.normalize().multiply(getSpeed()));
-				Field field = getGame().getLevel().getField(next.getX(), next.getY());
-				if (field != null && !field.isBlocked()) {
-					collision:
-					{
-						for (Unit unit : getPlayer().getGame().getUnits()) {
-							if (unit != this && unit.getPosition().distance(next) < 16) break collision;
-						}
-						setPosition(next);
-					}
-				}
+				if (isPositionAvailable(next)) setPosition(next);
 			} else getDestinations().remove();
 		}
 		if (!getPlayer().isController())
@@ -96,7 +66,7 @@ public class Unit extends Physical implements Iconable {
 	public void visible() {
 		Field field = getGame().getLevel().getField(getPosition().getX(), getPosition().getY());
 		if (field == null) return;
-		double difference = field.getSightDistance() * 16.0;
+		double difference = field.getSightDistance() * 16.0 + 2 * 12.0;
 		for (Unit unit : List.copyOf(getGame().getUnits())) {
 			if (unit.getPlayer() != getPlayer() && (Math.abs(unit.getPosition().getX() - getPosition().getX()) <
 					difference && Math.abs(unit.getPosition().getY() - getPosition().getY()) < difference)) {
@@ -144,6 +114,41 @@ public class Unit extends Physical implements Iconable {
 
 	public void deselect() {
 		// For override
+	}
+
+	private void addEventHandler() {
+		Player player = getPlayer();
+		getGraphic().setPickOnBounds(true);
+		getGraphic().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			if (e.getButton() == MouseButton.PRIMARY) {
+				if (getPlayer().isController()) {
+					if (!e.isShiftDown())
+						player.getGame().getSelected().clear();
+					player.getGame().getSelected().add(this);
+				}
+			} else if (e.getButton() == MouseButton.SECONDARY && !player.isController()) {
+					getGame().getSelected().forEach(unit -> unit.setTarget(this));
+			}
+		});
+		getIcon().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			if (e.getButton() == MouseButton.PRIMARY) {
+				player.getGame().getSelected().clear();
+				player.getGame().getSelected().add(this);
+			} else if (e.getButton() == MouseButton.SECONDARY) {
+				player.getGame().getSelected().remove(this);
+			}
+		});
+	}
+
+	public boolean isPositionAvailable(Point2D next) {
+		Field field = getGame().getLevel().getField(next.getX(), next.getY());
+		if (field != null && !field.isBlocked()) {
+			for (Unit unit : getPlayer().getGame().getUnits()) {
+				if (unit != this && unit.getPosition().distance(next) < 16) return false;
+			}
+			return true;
+		}
+		return false;
 	}
 
 	@Nonnull

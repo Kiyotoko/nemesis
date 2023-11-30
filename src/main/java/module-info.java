@@ -3,7 +3,7 @@ module nemesis {
     requires javafx.controls;
     requires javafx.graphics;
     requires com.google.gson;
-    requires jsr305;
+    requires annotations;
 
     opens org.nemesis;
 }

@@ -40,7 +40,7 @@
   "types": {
     "1": {
       "color": "0x4c4c4c",
-      "sightDistance": 2.8,
+      "sightDistance": 4.0,
       "blocked": false
     },
     "2": {

@@ -1,7 +1,5 @@
 package org.nemesis.game;
 
-import javafx.geometry.Point2D;
-
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -13,18 +11,17 @@ public class Projectile extends Physical {
 		super(unit.getPlayer(), unit.getPosition());
 
 		if (unit.hasTarget())
-			setDestination(unit.getTarget().getDestination());
+			setDestination(unit.getTarget().getPosition());
 		else {
 			setDestination(unit.getPosition());
 		}
-		setRotation(getPosition().angle(getDestination()));
+		setRotation(Math.atan2(getDestination().getY() - getPosition().getY(), getDestination().getX() - getPosition().getX()));
 		getGame().getProjectiles().add(this);
 	}
 
 	@Override
 	public void displacement() {
-		setPosition(getPosition().add(
-				new Point2D(-Math.cos(getRotation()), -Math.sin(getRotation())).multiply(getSpeed())));
+		setPosition(getPosition().add(Math.cos(getRotation()) * getSpeed(), Math.sin(getRotation()) * getSpeed()));
 		setRange(getRange() - getSpeed());
 		check();
 	}

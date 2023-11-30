@@ -14,6 +14,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
+import org.nemesis.content.BaseUnit;
 import org.nemesis.content.LevelLoader;
 
 import javax.annotation.Nonnull;
@@ -26,45 +27,68 @@ import static javafx.animation.Animation.INDEFINITE;
 
 public class Game extends Scene implements Entity {
 
+	// Lists for storing game objects
 	private final @Nonnull List<Entity> entities = new ArrayList<>();
-
 	private final @Nonnull ObservableList<Player> players = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<Unit> units = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<Projectile> projectiles = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<ControlPoint> controlPoints = FXCollections.observableArrayList();
 	private final @Nonnull ObservableList<Animation> animations = FXCollections.observableArrayList();
-
 	private final @Nonnull ObservableSet<Unit> selected = FXCollections.observableSet();
 
-	private final @Nonnull Level level = new LevelLoader("level.json").getLoaded();
+	// Graphic containers
+	private final @Nonnull VBox top = new VBox(2);
+	private final @Nonnull Pane down = new Pane();
+	private final @Nonnull HBox bottom = new HBox(8);
 
+	// Level data object
+	private final @Nonnull Level level;
+
+	// Scene management
 	private final @Nonnull Camera camera = new ParallelCamera();
 	private double startX;
 	private double startY;
 	private boolean dragged = false;
 	private boolean selecting = false;
 
-	public Game(BorderPane pane) {
-		super(pane, 600, 600, true, SceneAntialiasing.BALANCED);
+	public static final class GameSettings {
+		private final String level;
 
-		Pane down = new Pane();
-		down.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, null, null)));
+		public GameSettings(String level) {
+			this.level = level;
+		}
+
+		public String getLevel() {
+			return level;
+		}
+	}
+
+	public Game(GameSettings settings) {
+		this(new BorderPane(), settings);
+		addEntities();
+	}
+
+	private Game(BorderPane pane, GameSettings settings) {
+		super(pane, 600, 600, true, SceneAntialiasing.BALANCED);
+		// Create level object and add it to the scene
+		level = new LevelLoader(settings.getLevel()).getLoaded();
+		down.getChildren().add(level.getGraphic());
+
+		// Add content to pane
+		SubScene subScene = new SubScene(getDown(), 600, 600, true, SceneAntialiasing.BALANCED);
+		subScene.widthProperty().bind(widthProperty());
+		subScene.heightProperty().bind(heightProperty());
+		subScene.setCamera(camera);
+		pane.getChildren().add(subScene);
+		pane.setTop(getTop());
+		pane.setBottom(getBottom());
+
+		// Add storage listeners
 		units.addListener(getGraphicListener(down));
 		projectiles.addListener(getGraphicListener(down));
 		controlPoints.addListener(getGraphicListener(down));
 		animations.addListener(getGraphicListener(down));
-		down.getChildren().add(level.getGraphic());
-
-		SubScene subScene = new SubScene(down, 600, 600, true, SceneAntialiasing.BALANCED);
-		pane.getChildren().add(subScene);
-
-		VBox top = new VBox(2);
-		top.setPadding(new Insets(10));
 		players.addListener(getGraphicListener(top));
-		pane.setTop(top);
-
-		HBox bottom = new HBox(8);
-		bottom.setPadding(new Insets(10));
 		selected.addListener((SetChangeListener.Change<? extends Unit> change) -> {
 			if (change.wasAdded()) {
 				bottom.getChildren().add(change.getElementAdded().getIcon());
@@ -75,19 +99,63 @@ public class Game extends Scene implements Entity {
 				change.getElementRemoved().deselect();
 			}
 		});
-		pane.setBottom(bottom);
 
-		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-			if (e.getButton() == MouseButton.SECONDARY) {
-				Point2D destination = new Point2D(e.getSceneX() + camera.getLayoutX(),
-						e.getSceneY() + camera.getLayoutY());
-				for (Unit unit : getSelected()) {
-					if (e.isShiftDown()) {
-						unit.getDestinations().add(destination);
-					} else unit.setDestination(destination);
-				}
+		// Add event handlers
+		addMouseClicking();
+		addMouseDragging();
+		addKeyHandler();
+
+		// Set graphic settings
+		top.setPadding(new Insets(10));
+		bottom.setPadding(new Insets(10));
+		down.setBackground(new Background(new BackgroundFill(Color.TRANSPARENT, null, null)));
+		pane.setBackground(new Background(new BackgroundFill(Color.gray(.25), null, null)));
+
+		// Create timeline and play it
+		Timeline timeline = new Timeline(
+				new KeyFrame(Duration.millis(50.0), e -> update()));
+		timeline.setCycleCount(INDEFINITE);
+		timeline.play();
+	}
+
+	@Override
+	public void update() {
+		Player controller = Player.getController();
+		Set<Field> oldRender = controller != null ? controller.getRenderFields() : null;
+		for (Entity entity : List.copyOf(entities)) entity.update();
+		if (controller != null) {
+			Set<Field> newRender = controller.getRenderFields();
+			Set<Field> intersection = new HashSet<>(oldRender);
+			intersection.removeAll(newRender);
+			for (Field field : intersection) {
+				field.setHidden(false);
 			}
-		});
+			newRender.removeAll(oldRender);
+			for (Field field : newRender) {
+				field.setHidden(true);
+			}
+		}
+	}
+
+	protected void addEntities() {
+		for (int i = 1; i < 3; i++)
+			new ControlPoint(this, new Point2D(this.getLevel().getWidth() * i * 0.33333, this.getLevel().getHeight() * 0.5));
+
+		Player player = new Player(this);
+		player.markAsController();
+		player.setName("Player");
+		player.setColor(Color.LIGHTBLUE);
+		for (int i = -2; i < 3; i++)
+			new BaseUnit(player, new Point2D(this.getLevel().getWidth() * 0.5 + 48.0 * i, this.getLevel().getHeight() * 0.15));
+
+		Player computer = new Player(this);
+		computer.setName("Computer");
+		computer.setColor(Color.ORANGERED);
+		for (int i = -2; i < 3; i++)
+			new BaseUnit(computer, new Point2D(this.getLevel().getWidth() * 0.5 + 48.0 * i, this.getLevel().getHeight() * 0.85));
+	}
+
+	private void addMouseDragging() {
 		Rectangle selection = new Rectangle();
 		selection.setFill(Color.color(1, 1, 1, 0.125));
 		selection.setStroke(Color.WHITE);
@@ -99,13 +167,13 @@ public class Game extends Scene implements Entity {
 					int newY = (int) (camera.getLayoutY() - e.getSceneY() + startY);
 					camera.setLayoutX(newX);
 					camera.setLayoutY(newY);
-                } else {
+				} else {
 					dragged = true;
 					setCursor(Cursor.MOVE);
-                }
-                startX = e.getSceneX();
-                startY = e.getSceneY();
-            } else if (e.getButton() == MouseButton.PRIMARY) {
+				}
+				startX = e.getSceneX();
+				startY = e.getSceneY();
+			} else if (e.getButton() == MouseButton.PRIMARY) {
 				if (selecting) {
 					double width = camera.getLayoutX() + e.getSceneX() - startX;
 					double height = camera.getLayoutY() + e.getSceneY() - startY;
@@ -146,7 +214,7 @@ public class Game extends Scene implements Entity {
 					double minX = selection.getX();
 					double minY = selection.getY();
 					double maxX = minX + selection.getWidth();
-					double maxY = minY + selection.getWidth();
+					double maxY = minY + selection.getHeight();
 					for (Unit unit : List.copyOf(Player.getController().getUnits())) {
 						Point2D pos = unit.getPosition();
 						if (minX < pos.getX() && pos.getX() < maxX && (minY < pos.getY() && pos.getY() < maxY)) {
@@ -156,6 +224,9 @@ public class Game extends Scene implements Entity {
 				}
 			}
 		});
+	}
+
+	private void addKeyHandler() {
 		addEventHandler(KeyEvent.KEY_PRESSED, e -> {
 			switch (e.getCode()) {
 				case UP:
@@ -173,34 +244,21 @@ public class Game extends Scene implements Entity {
 				default: break;
 			}
 		});
-		pane.setBackground(new Background(new BackgroundFill(Color.gray(.25), null, null)));
-		subScene.widthProperty().bind(widthProperty());
-		subScene.heightProperty().bind(heightProperty());
-		subScene.setCamera(camera);
-
-		Timeline timeline = new Timeline(
-				new KeyFrame(Duration.millis(50.0), e -> update()));
-		timeline.setCycleCount(INDEFINITE);
-		timeline.play();
+		setOnKeyPressed(Player.getKeyEventHandler());
 	}
 
-	@Override
-	public void update() {
-		boolean render = Player.getController() != null;
-		Set<Field> oldRender = render ? Player.getController().getRenderFields() : null;
-		for (Entity entity : List.copyOf(entities)) entity.update();
-		if (render) {
-			Set<Field> newRender = Player.getController().getRenderFields();
-			Set<Field> intersection = new HashSet<>(oldRender);
-			intersection.removeAll(newRender);
-			for (Field field : intersection) {
-				field.setHidden(false);
+	private void addMouseClicking() {
+		addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			if (e.getButton() == MouseButton.SECONDARY) {
+				Point2D destination = new Point2D(e.getSceneX() + camera.getLayoutX(),
+						e.getSceneY() + camera.getLayoutY());
+				for (Unit unit : getSelected()) {
+					if (e.isShiftDown()) {
+						unit.getDestinations().add(destination);
+					} else unit.setDestination(destination);
+				}
 			}
-			newRender.removeAll(oldRender);
-			for (Field field : newRender) {
-				field.setHidden(true);
-			}
-		}
+		});
 	}
 
 	private ListChangeListener<Displayable> getGraphicListener(Pane parent) {
@@ -257,5 +315,20 @@ public class Game extends Scene implements Entity {
 	@Nonnull
 	public Level getLevel() {
 		return level;
+	}
+
+	@Nonnull
+	public VBox getTop() {
+		return top;
+	}
+
+	@Nonnull
+	public Pane getDown() {
+		return down;
+	}
+
+	@Nonnull
+	public HBox getBottom() {
+		return bottom;
 	}
 }

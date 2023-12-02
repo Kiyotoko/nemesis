@@ -69,7 +69,7 @@ public class Game extends Scene implements Entity {
 	}
 
 	private Game(BorderPane pane, GameSettings settings) {
-		super(pane, 600, 600, true, SceneAntialiasing.BALANCED);
+		super(pane, 800, 720, true, SceneAntialiasing.BALANCED);
 		// Create level object and add it to the scene
 		level = new LevelLoader(settings.getLevel()).getLoaded();
 		down.getChildren().add(level.getGraphic());

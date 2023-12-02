@@ -6,4 +6,5 @@ module nemesis {
     requires annotations;
 
     opens org.nemesis;
+    opens org.nemesis.content;
 }

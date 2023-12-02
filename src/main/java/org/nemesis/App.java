@@ -1,17 +1,16 @@
 package org.nemesis;
 
-import org.nemesis.game.Game;
-
 import javafx.application.Application;
 import javafx.stage.Stage;
+import org.nemesis.menu.Menu;
 
 public class App extends Application {
 
 	@Override
 	public void start(Stage stage) {
-		Game game = new Game(new Game.GameSettings("level.json"));
+		Menu menu = new Menu(stage);
 
-		stage.setScene(game);
+		stage.setScene(menu);
 		stage.show();
 	}
 }

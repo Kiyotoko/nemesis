@@ -90,13 +90,9 @@ public class LevelLoader {
     private final Level loaded;
 
     public LevelLoader(String file) {
-        try (InputStream stream = Objects.requireNonNull(LevelLoader.class.getResourceAsStream(file))) {
-            LevelLoader.BundleSource bundle = gson.fromJson(new String(stream.readAllBytes()), LevelLoader.BundleSource.class);
-            Objects.requireNonNull(bundle);
-            loaded = buildBundle(bundle);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        LevelLoader.BundleSource bundle = gson.fromJson(ResourceManager.getLevel(file), LevelLoader.BundleSource.class);
+        Objects.requireNonNull(bundle);
+        loaded = buildBundle(bundle);
     }
 
     private static Level buildBundle(BundleSource source) {

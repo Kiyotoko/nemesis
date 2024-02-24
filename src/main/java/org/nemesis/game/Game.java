@@ -2,7 +2,6 @@ package org.nemesis.game;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.application.Platform;
 import javafx.collections.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -14,14 +13,10 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
-import org.nemesis.content.BaseUnit;
-import org.nemesis.content.LevelLoader;
+import org.nemesis.content.FileUtils;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static javafx.animation.Animation.INDEFINITE;
 
@@ -42,7 +37,7 @@ public class Game extends Scene implements Entity {
 	private final @Nonnull HBox bottom = new HBox(8);
 
 	// Level data object
-	private final @Nonnull Level level;
+	private @Nonnull Area area;
 
 	// Scene management
 	private final @Nonnull Camera camera = new ParallelCamera();
@@ -51,28 +46,8 @@ public class Game extends Scene implements Entity {
 	private boolean dragged = false;
 	private boolean selecting = false;
 
-	public static final class GameSettings {
-		private final String level;
-
-		public GameSettings(String level) {
-			this.level = level;
-		}
-
-		public String getLevel() {
-			return level;
-		}
-	}
-
-	public Game(GameSettings settings) {
-		this(new BorderPane(), settings);
-		addEntities();
-	}
-
-	private Game(BorderPane pane, GameSettings settings) {
+	public Game(@Nonnull BorderPane pane) {
 		super(pane, 800, 720, true, SceneAntialiasing.BALANCED);
-		// Create level object and add it to the scene
-		level = new LevelLoader(settings.getLevel()).getLoaded();
-		down.getChildren().add(level.getGraphic());
 
 		// Add content to pane
 		SubScene subScene = new SubScene(getDown(), 600, 600, true, SceneAntialiasing.BALANCED);
@@ -92,11 +67,9 @@ public class Game extends Scene implements Entity {
 		selected.addListener((SetChangeListener.Change<? extends Unit> change) -> {
 			if (change.wasAdded()) {
 				bottom.getChildren().add(change.getElementAdded().getIcon());
-				change.getElementAdded().select();
 			}
 			if (change.wasRemoved()) {
 				bottom.getChildren().remove(change.getElementRemoved().getIcon());
-				change.getElementRemoved().deselect();
 			}
 		});
 
@@ -121,44 +94,37 @@ public class Game extends Scene implements Entity {
 	@Override
 	public void update() {
 		Player controller = Player.getController();
-		Set<Field> oldRender = controller != null ? controller.getRenderFields() : null;
+		Set<Block> oldRender = controller != null ? controller.getRenderFields() : null;
 		for (Entity entity : List.copyOf(entities)) entity.update();
 		if (controller != null) {
-			Set<Field> newRender = controller.getRenderFields();
-			Set<Field> intersection = new HashSet<>(oldRender);
+			Set<Block> newRender = controller.getRenderFields();
+			Set<Block> intersection = new HashSet<>(oldRender);
 			intersection.removeAll(newRender);
-			for (Field field : intersection) {
-				field.setHidden(false);
+			for (Block block : intersection) {
+				block.setHidden(false);
 			}
 			newRender.removeAll(oldRender);
-			for (Field field : newRender) {
-				field.setHidden(true);
+			for (Block block : newRender) {
+				block.setHidden(true);
 			}
 		}
 	}
 
 	protected void addEntities() {
 		for (int i = 1; i < 3; i++)
-			new ControlPoint(this, new Point2D(this.getLevel().getWidth() * i * 0.33333, this.getLevel().getHeight() * 0.5));
+			new ControlPoint(this, new ControlPoint.Properties());
 
 		Player player = new Player(this);
 		player.markAsController();
 		player.setName("Player");
 		player.setColor(Color.LIGHTBLUE);
-		for (int i = -2; i < 3; i++)
-			new BaseUnit(player, new Point2D(this.getLevel().getWidth() * 0.5 + 48.0 * i, this.getLevel().getHeight() * 0.15));
-
-		Player computer = new Player(this);
-		computer.setName("Computer");
-		computer.setColor(Color.ORANGERED);
-		for (int i = -2; i < 3; i++)
-			new BaseUnit(computer, new Point2D(this.getLevel().getWidth() * 0.5 + 48.0 * i, this.getLevel().getHeight() * 0.85));
 	}
 
 	private void addMouseDragging() {
 		Rectangle selection = new Rectangle();
 		selection.setFill(Color.color(1, 1, 1, 0.125));
 		selection.setStroke(Color.WHITE);
+		selection.setVisible(false);
 		down.getChildren().add(selection);
 		addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
 			if (e.getButton() == MouseButton.MIDDLE) {
@@ -261,19 +227,17 @@ public class Game extends Scene implements Entity {
 		});
 	}
 
-	private ListChangeListener<Displayable> getGraphicListener(Pane parent) {
+	private ListChangeListener<GameObject> getGraphicListener(Pane parent) {
 		return change -> {
 			change.next();
 			if (change.wasAdded())
 				for (int index = 0; index < change.getAddedSize(); index++) {
-					Displayable displayable = change.getAddedSubList().get(index);
-					parent.getChildren().add(displayable.getGraphic());
-					if (displayable instanceof Physical)
-						Platform.runLater(((Physical) displayable)::relocate);
+					GameObject object = change.getAddedSubList().get(index);
+					parent.getChildren().add(object.getPane());
 				}
 			if (change.wasRemoved())
 				for (int index = 0; index < change.getRemovedSize(); index++)
-					parent.getChildren().remove(change.getRemoved().get(index).getGraphic());
+					parent.getChildren().remove(change.getRemoved().get(index).getPane());
 		};
 	}
 
@@ -313,8 +277,8 @@ public class Game extends Scene implements Entity {
 	}
 
 	@Nonnull
-	public Level getLevel() {
-		return level;
+	public Area getArea() {
+		return area;
 	}
 
 	@Nonnull

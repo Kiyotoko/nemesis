@@ -5,11 +5,13 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import org.nemesis.content.ResourceManager;
+import org.nemesis.content.FileUtils;
+import org.nemesis.game.Area;
 import org.nemesis.game.Game;
 
 import javax.annotation.Nonnull;
@@ -17,16 +19,12 @@ import javax.annotation.Nullable;
 
 public class Menu extends Scene {
 
-    private static final @Nonnull ResourceManager manager = new ResourceManager("Menu");
-
     public Menu(Stage stage) {
         this(new VBox(6), stage);
     }
 
     private Menu(VBox root, Stage stage) {
         super(root, 400, 300);
-
-        getStylesheets().add(ResourceManager.getStylesheet("menu.css"));
 
         Label title = new Label("Nemesis Snapshot");
         title.setFont(Font.font(26));
@@ -41,7 +39,7 @@ public class Menu extends Scene {
             @Override
             public String toString(@Nullable String key) {
                 if (key == null) return "null";
-                return manager.translate(key);
+                return key;
             }
 
             @Override
@@ -49,11 +47,16 @@ public class Menu extends Scene {
                 throw new UnsupportedOperationException();
             }
         });
-        choices.getItems().addAll(ResourceManager.getLevels());
+        choices.getItems().addAll(FileUtils.getMetaListing("area"));
         if (!choices.getItems().isEmpty()) choices.setValue(choices.getItems().iterator().next());
 
         Button button = new Button("Start new Game");
-        button.setOnAction(e -> stage.setScene(new Game(new Game.GameSettings(choices.getValue()))));
+        button.setOnAction(e -> {
+            Game game = new Game(new BorderPane());
+            Area area = new Area(FileUtils.getJson("area", choices.getValue(), Area.Properties.class));
+            game.getDown().getChildren().add(area.getPane());
+            stage.setScene(game);
+        });
 
         root.getChildren().addAll(title, description, choices, button);
         root.setPadding(new Insets(25));

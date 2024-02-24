@@ -17,17 +17,17 @@ public class PathAnimation extends Animation {
     private final @Nonnull Unit unit;
 
     public PathAnimation(@Nonnull Unit unit) {
-        super(unit.getPlayer(), unit.getPosition());
+        super(unit.getGame());
         this.unit = unit;
         paths.addListener((ListChangeListener<? super Line>) change -> {
             change.next();
             if (change.wasAdded()) {
                 for (Line line : change.getAddedSubList())
-                    getGraphic().getChildren().add(line);
+                    getPane().getChildren().add(line);
             }
             if (change.wasRemoved()) {
                 for (Line line : change.getRemoved())
-                    getGraphic().getChildren().remove(line);
+                    getPane().getChildren().remove(line);
             }
         });
         setLiveTime(Double.POSITIVE_INFINITY);
@@ -59,11 +59,6 @@ public class PathAnimation extends Animation {
             previous = destination;
             i++;
         }
-    }
-
-    @Override
-    public void relocate() {
-        // Nothing to do
     }
 
     @CheckReturnValue

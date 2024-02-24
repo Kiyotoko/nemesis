@@ -89,7 +89,7 @@
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
 							<mainClass>${project.mainClass}</mainClass>
-							<packageName>dionysius</packageName>
+							<packageName>nemesis</packageName>
 						</manifest>
 					</archive>
 				</configuration>

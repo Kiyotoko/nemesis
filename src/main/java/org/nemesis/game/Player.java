@@ -4,7 +4,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
@@ -20,18 +19,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class Player implements Entity, Destroyable, Displayable {
+public class Player extends GameObject implements Destroyable {
 
     private static @Nullable Player controller;
+
     private final @Nonnull ObservableList<Unit> units = FXCollections.observableArrayList();
     private final @Nonnull Label label = new Label(getClass().getSimpleName());
-    private final @Nonnull Game game;
 
     private @Nonnull Color color = Color.WHITE;
     private @Nonnull String name = "Unknown";
 
     public Player(@Nonnull Game game) {
-        this.game = game;
+        super(game);
         label.setFont(Font.font("Ubuntu", FontWeight.BOLD, 14));
         label.setTextFill(Color.WHITE);
 
@@ -52,10 +51,11 @@ public class Player implements Entity, Destroyable, Displayable {
     }
 
     private static void mark(int mark) {
-        if (getController() != null) {
-            for (Unit unit : getController().getUnits())
+        final var controller = getController();
+        if (controller != null) {
+            for (Unit unit : controller.getUnits())
                 if (unit.getMark() == mark) unit.setMark(Unit.UNMARKED);
-            Set<Unit> selected = getController().getGame().getSelected();
+            Set<Unit> selected = controller.getGame().getSelected();
             for (Unit unit : selected) {
                 unit.setMark(mark);
             }
@@ -63,10 +63,11 @@ public class Player implements Entity, Destroyable, Displayable {
     }
 
     private static void select(int mark) {
-        if (getController() != null) {
-            Set<Unit> selected = getController().getGame().getSelected();
+        final var controller = getController();
+        if (controller != null) {
+            Set<Unit> selected = controller.getGame().getSelected();
             selected.clear();
-            for (Unit unit : getController().getUnits())
+            for (Unit unit : controller.getUnits())
                 if (unit.getMark() == mark) selected.add(unit);
         }
     }
@@ -173,6 +174,7 @@ public class Player implements Entity, Destroyable, Displayable {
         getGame().getEntities().remove(this);
     }
 
+    @SuppressWarnings("all")
     public void markAsController() {
         controller = this;
     }
@@ -182,37 +184,26 @@ public class Player implements Entity, Destroyable, Displayable {
         return getController() == this;
     }
 
-    public @Nonnull Set<Field> getRenderFields() {
-        Level level = getGame().getLevel();
-        Set<Field> fields = new HashSet<>();
+    public @Nonnull Set<Block> getRenderFields() {
+        Area area = getGame().getArea();
+        Set<Block> blocks = new HashSet<>();
         for (Unit unit : getUnits()) {
-            Field current = level.getField(unit.getPosition().getX(), unit.getPosition().getY());
+            Block current = area.getBlock(unit.getPosition().getX(), unit.getPosition().getY());
             if (current == null) continue;
-            double visibility = current.getSightDistance();
+            double visibility = current.getProperties().getSightDistance();
             for (double x = -visibility; x <= visibility; x++) {
                 for (double y = -visibility; y <= visibility; y++) {
-                    Field next = level.getField(unit.getPosition().getX() + x * 16, unit.getPosition().getY() + y * 16);
-                    if (next != null) fields.add(next);
+                    Block next = area.getBlock(unit.getPosition().getX() + x * 16, unit.getPosition().getY() + y * 16);
+                    if (next != null) blocks.add(next);
                 }
             }
         }
-        return fields;
+        return blocks;
     }
 
     @Nonnull
     public List<Unit> getUnits() {
         return units;
-    }
-
-    @Nonnull
-    public Game getGame() {
-        return game;
-    }
-
-    @Nonnull
-    @Override
-    public Node getGraphic() {
-        return label;
     }
 
     @Nonnull

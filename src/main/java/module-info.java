@@ -7,4 +7,5 @@ module nemesis {
 
     opens org.nemesis;
     opens org.nemesis.content;
+    opens org.nemesis.game;
 }

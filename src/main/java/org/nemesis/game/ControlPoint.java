@@ -8,7 +8,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 
-public class ControlPoint extends GameObject implements Entity {
+public class ControlPoint extends Marker {
 
     private static final double CONTROL_POINT_RANGE = 40;
 
@@ -24,13 +24,10 @@ public class ControlPoint extends GameObject implements Entity {
         base.setStrokeWidth(2);
         base.setStroke(Color.WHITE);
 
-        getPane().getChildren().add(base);
-        getPane().getChildren().add(indic);
         getPane().setLayoutX(properties.getPosition().getX());
         getPane().setLayoutY(properties.getPosition().getY());
 
-        getGame().getControlPoints().add(this);
-        getGame().getEntities().add(this);
+        getGame().getDown().getChildren().add(getPane());
     }
 
     public static class Properties implements Serializable {
@@ -76,16 +73,17 @@ public class ControlPoint extends GameObject implements Entity {
 
     @Override
     public void update() {
-        for (Unit unit : getGame().getUnits()) {
-            if (unit.getPosition().distance(properties.getPosition()) <= CONTROL_POINT_RANGE) {
+        for (GameObject object : getGame().getObjects()) {
+            if (object instanceof Unit && object.getPosition().distance(properties.getPosition()) <= CONTROL_POINT_RANGE) {
+                Unit unit = (Unit) object;
                 if (controller == unit.getPlayer()) {
                     control += 0.005;
                 } else {
                     control -= 0.005;
                     if (control <= 0) {
                         controller = unit.getPlayer();
-                        indic.setFill(Color.color(controller.getColor().getRed(), controller.getColor().getGreen(),
-                                controller.getColor().getBlue(), 0.5));
+                        /*indic.setFill(Color.color(controller.getColor().getRed(), controller.getColor().getGreen(),
+                                controller.getColor().getBlue(), 0.5));*/
                         control = -control;
                         controlTime = 0;
                     }

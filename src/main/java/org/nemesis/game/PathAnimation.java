@@ -65,7 +65,7 @@ public class PathAnimation extends Animation {
     @Nonnull
     private Line create() {
         Line path = new Line();
-        path.setStroke(unit.getPlayer().getColor());
+        // path.setStroke(unit.getPlayer().getColor());
         return path;
     }
 }

@@ -2,11 +2,10 @@ package org.nemesis.game;
 
 import javax.annotation.Nonnull;
 
-public abstract class Animation extends GameObject implements Destroyable {
+public abstract class Animation extends GameObject {
 
     protected Animation(@Nonnull Game game) {
         super(game);
-        getGame().getAnimations().add(this);
     }
 
     @Override
@@ -19,11 +18,6 @@ public abstract class Animation extends GameObject implements Destroyable {
 
     public void count() {
         setAnimationTime(getAnimationTime() + 1);
-    }
-
-    @Override
-    public void destroy() {
-        getGame().getAnimations().remove(this);
     }
 
     private double animationTime;

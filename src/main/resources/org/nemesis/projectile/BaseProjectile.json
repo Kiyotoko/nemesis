@@ -1,0 +1,12 @@
+{
+  "id": "Unit",
+  "pane": {
+    "image": "image/Unit1Scaled",
+    "scaleX": 2,
+    "scaleY": 2
+  },
+  "movementSpeed": 1.0,
+  "damage": 1.0,
+  "criticalDamage": 2.0,
+  "criticalChance": 0.6
+}

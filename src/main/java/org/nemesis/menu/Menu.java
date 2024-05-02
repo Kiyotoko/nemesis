@@ -10,8 +10,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import org.nemesis.content.FileUtils;
-import org.nemesis.game.Area;
 import org.nemesis.game.Game;
 
 import javax.annotation.Nonnull;
@@ -47,14 +45,11 @@ public class Menu extends Scene {
                 throw new UnsupportedOperationException();
             }
         });
-        choices.getItems().addAll(FileUtils.getMetaListing("area"));
         if (!choices.getItems().isEmpty()) choices.setValue(choices.getItems().iterator().next());
 
         Button button = new Button("Start new Game");
         button.setOnAction(e -> {
             Game game = new Game(new BorderPane());
-            Area area = new Area(FileUtils.getJson("area", choices.getValue(), Area.Properties.class));
-            game.getDown().getChildren().add(area.getPane());
             stage.setScene(game);
         });
 

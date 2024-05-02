@@ -4,23 +4,25 @@ import javafx.geometry.Point2D;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 import org.nemesis.content.Identity;
 import org.nemesis.content.ImageBase;
+import org.nemesis.content.ProjectileFactory;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.List;
-import java.util.function.Function;
 
-public class Unit extends GameObject implements Kinetic, Destroyable {
+public class Unit extends GameObject implements Kinetic {
 
 	private final @Nonnull Deque<Point2D> destinations = new ArrayDeque<>(4);
 
 	private final @Nonnull Player player;
 	private final @Nonnull Properties properties;
+
+	private final @Nonnull Pane icon = new Pane();
 
 	public Unit(@Nonnull Player player, @Nonnull Properties properties) {
 		super(player.getGame());
@@ -28,8 +30,6 @@ public class Unit extends GameObject implements Kinetic, Destroyable {
 		this.properties = properties;
 
 		addEventHandler();
-		getPane().setVisible(getPlayer().isController());
-		setDestination(position);
 		if (getPlayer().isController()) {
 			animation = new PathAnimation(this);
 		}
@@ -37,7 +37,6 @@ public class Unit extends GameObject implements Kinetic, Destroyable {
 		getPane().getChildren().add(new ImageView(properties.getPane().getImage()));
 		getIcon().getChildren().add(new ImageView(properties.getIcon().getImage()));
 		getPlayer().getUnits().add(this);
-		getGame().getUnits().add(this);
 	}
 
 	@CheckReturnValue
@@ -57,7 +56,6 @@ public class Unit extends GameObject implements Kinetic, Destroyable {
 	public Deque<Point2D> getDestinations() {
 		return destinations;
 	}
-
 
 	public static class Properties extends Identity {
 
@@ -119,6 +117,12 @@ public class Unit extends GameObject implements Kinetic, Destroyable {
 		public double getMovementSpeed() {
 			return movementSpeed;
 		}
+
+		private double rotationSpeed;
+
+		public double getRotationSpeed() {
+			return rotationSpeed;
+		}
 	}
 
 	@Override
@@ -132,34 +136,39 @@ public class Unit extends GameObject implements Kinetic, Destroyable {
 		if (!getDestinations().isEmpty()) {
 			Point2D difference = getDestination().subtract(getPosition());
 			if (difference.magnitude() > getProperties().getMovementSpeed()) {
-				Point2D next = getPosition().add(difference.normalize().multiply(getProperties().getMovementSpeed()));
+				double theta = Math.toDegrees(Math.atan2(difference.getX(), -difference.getY()));
+				double alpha = theta - getRotation();
+				if (alpha > 180) {
+					alpha -= 360;
+				}
+				if (alpha < -180) {
+					alpha += 360;
+				}
+				if (Math.abs(alpha) > getProperties().getRotationSpeed()) {
+					setRotation(getRotation() + Math.signum(alpha) * getProperties().getRotationSpeed());
+				} else {
+					setRotation(getRotation() + alpha);
+				}
+
+				double radians = Math.toRadians(getRotation());
+				Point2D next = getPosition().subtract(-Math.sin(radians) * getProperties().getMovementSpeed(),
+						Math.cos(radians) * getProperties().getMovementSpeed());
 				if (isPositionAvailable(next)) setPosition(next);
 			} else getDestinations().remove();
 		}
-		if (!getPlayer().isController())
-			visible();
 	}
 
-	private Point2D position;
-
-	@Override
-	public void setPosition(Point2D position) {
-		this.position = position;
-		getPane().setLayoutX(position.getX());
-		getPane().setLayoutY(position.getY());
-	}
-
-	@Override
-	public Point2D getPosition() {
-		return position;
+	@Nonnull
+	public Pane getIcon() {
+		return icon;
 	}
 
 	public void shoot() {
 		if (hasTarget() && !isReloading()) {
 			if (getTarget().getHitPoints() > 0) {
-				Function<Unit, Projectile> creator = getProjectileCreator();
+				ProjectileFactory creator = getProjectileFactory();
 				if (creator != null) {
-					creator.apply(this);
+					creator.create(this);
 					setReloadTime(getProperties().getReloadSpeed());
 				}
 			} else {
@@ -169,47 +178,22 @@ public class Unit extends GameObject implements Kinetic, Destroyable {
 		setReloadTime(Math.max(getReloadTime() - 1, 0));
 	}
 
-	public void visible() {
-		Block block = getGame().getArea().getBlock(getPosition().getX(), getPosition().getY());
-		if (block == null) return;
-		double difference = block.getProperties().getSightDistance() * 16.0 + 2 * 12.0;
-		for (Unit unit : List.copyOf(getGame().getUnits())) {
-			if (unit.getPlayer() != getPlayer() && (Math.abs(unit.getPosition().getX() - getPosition().getX()) <
-					difference && Math.abs(unit.getPosition().getY() - getPosition().getY()) < difference)) {
-				getPane().setVisible(true);
-				return;
-			}
-		}
-		getPane().setVisible(false);
-	}
-
-	public void reveal() {
-		Area area = getGame().getArea();
-		Block inside = area.getBlock(getPosition().getX(), getPosition().getY());
-		if (inside == null) return;
-		double visibility = inside.getProperties().getSightDistance();
-		for (double x = -visibility; x < visibility; x++) {
-			for (double y = -visibility; y < visibility; y++) {
-				Block block = area.getBlock(getPosition().getX()+x*16, getPosition().getY()+y*16);
-				if (block != null) block.setHidden(true);
-			}
-		}
-	}
-
 	@Override
 	public void destroy() {
+		super.destroy();
 		getPlayer().getUnits().remove(this);
-		getGame().getUnits().remove(this);
 		if (getPlayer().isController()) {
 			getGame().getSelected().remove(this);
 			if (animation != null)
 				animation.destroy();
 		}
+		getGame().getDown().getChildren().remove(getPane());
 	}
 
 	private void addEventHandler() {
 		getPane().setPickOnBounds(true);
 		getPane().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			System.out.println(e);
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (getPlayer().isController()) {
 					if (!e.isShiftDown())
@@ -231,14 +215,11 @@ public class Unit extends GameObject implements Kinetic, Destroyable {
 	}
 
 	public boolean isPositionAvailable(Point2D next) {
-		Block block = getGame().getArea().getBlock(next.getX(), next.getY());
-		if (block != null && !block.getProperties().isBlocked()) {
-			for (Unit unit : getPlayer().getGame().getUnits()) {
-				if (unit != this && unit.getPosition().distance(next) < 16) return false;
-			}
-			return true;
+		for (GameObject object : getGame().getObjects()) {
+			if (!(object instanceof Animation) && object != this && object.getPosition().distance(next) < 16)
+				return false;
 		}
-		return false;
+		return true;
 	}
 
 	@Nonnull
@@ -246,15 +227,15 @@ public class Unit extends GameObject implements Kinetic, Destroyable {
 		return properties;
 	}
 
-	private @Nullable Function<Unit, Projectile> projectileCreator;
+	private @Nullable ProjectileFactory projectileFactory;
 
-	public void setProjectileCreator(@Nullable Function<Unit, Projectile> projectileCreator) {
-		this.projectileCreator = projectileCreator;
+	public void setProjectileFactory(@Nullable ProjectileFactory projectileFactory) {
+		this.projectileFactory = projectileFactory;
 	}
 
 	@Nullable
-	public Function<Unit, Projectile> getProjectileCreator() {
-		return projectileCreator;
+	public ProjectileFactory getProjectileFactory() {
+		return projectileFactory;
 	}
 
 	private @Nullable PathAnimation animation;

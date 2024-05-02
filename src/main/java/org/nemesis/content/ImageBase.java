@@ -54,7 +54,7 @@ public class ImageBase implements Serializable {
 
     public Image getImage() {
         if (loaded == null) {
-            loaded = FileUtils.getArt(image);
+            loaded = FileUtils.getImage(image);
             if (scaleX != 1 || scaleY != 1) loaded = upscale(loaded);
         }
         return loaded;

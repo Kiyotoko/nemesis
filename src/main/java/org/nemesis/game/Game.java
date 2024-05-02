@@ -13,31 +13,25 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
-import org.nemesis.content.FileUtils;
+import org.nemesis.content.ContentLoader;
+import org.nemesis.content.UnitFactory;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 
 import static javafx.animation.Animation.INDEFINITE;
 
-public class Game extends Scene implements Entity {
+public class Game extends Scene {
 
 	// Lists for storing game objects
-	private final @Nonnull List<Entity> entities = new ArrayList<>();
-	private final @Nonnull ObservableList<Player> players = FXCollections.observableArrayList();
-	private final @Nonnull ObservableList<Unit> units = FXCollections.observableArrayList();
-	private final @Nonnull ObservableList<Projectile> projectiles = FXCollections.observableArrayList();
-	private final @Nonnull ObservableList<ControlPoint> controlPoints = FXCollections.observableArrayList();
-	private final @Nonnull ObservableList<Animation> animations = FXCollections.observableArrayList();
+	private final @Nonnull List<Player> players = new ArrayList<>();
+	private final @Nonnull List<GameObject> objects = new ArrayList<>();
 	private final @Nonnull ObservableSet<Unit> selected = FXCollections.observableSet();
 
 	// Graphic containers
 	private final @Nonnull VBox top = new VBox(2);
 	private final @Nonnull Pane down = new Pane();
 	private final @Nonnull HBox bottom = new HBox(8);
-
-	// Level data object
-	private @Nonnull Area area;
 
 	// Scene management
 	private final @Nonnull Camera camera = new ParallelCamera();
@@ -59,11 +53,6 @@ public class Game extends Scene implements Entity {
 		pane.setBottom(getBottom());
 
 		// Add storage listeners
-		units.addListener(getGraphicListener(down));
-		projectiles.addListener(getGraphicListener(down));
-		controlPoints.addListener(getGraphicListener(down));
-		animations.addListener(getGraphicListener(down));
-		players.addListener(getGraphicListener(top));
 		selected.addListener((SetChangeListener.Change<? extends Unit> change) -> {
 			if (change.wasAdded()) {
 				bottom.getChildren().add(change.getElementAdded().getIcon());
@@ -86,38 +75,21 @@ public class Game extends Scene implements Entity {
 
 		// Create timeline and play it
 		Timeline timeline = new Timeline(
-				new KeyFrame(Duration.millis(50.0), e -> update()));
+				new KeyFrame(Duration.millis(5.0), e -> tick()));
 		timeline.setCycleCount(INDEFINITE);
 		timeline.play();
-	}
-
-	@Override
-	public void update() {
-		Player controller = Player.getController();
-		Set<Block> oldRender = controller != null ? controller.getRenderFields() : null;
-		for (Entity entity : List.copyOf(entities)) entity.update();
-		if (controller != null) {
-			Set<Block> newRender = controller.getRenderFields();
-			Set<Block> intersection = new HashSet<>(oldRender);
-			intersection.removeAll(newRender);
-			for (Block block : intersection) {
-				block.setHidden(false);
-			}
-			newRender.removeAll(oldRender);
-			for (Block block : newRender) {
-				block.setHidden(true);
-			}
-		}
-	}
-
-	protected void addEntities() {
-		for (int i = 1; i < 3; i++)
-			new ControlPoint(this, new ControlPoint.Properties());
 
 		Player player = new Player(this);
 		player.markAsController();
-		player.setName("Player");
-		player.setColor(Color.LIGHTBLUE);
+		ContentLoader loader = new ContentLoader();
+		UnitFactory factory = loader.getUnitFactory("Unit");
+		if (factory != null) {
+			factory.create(player);
+		}
+	}
+
+	public void tick() {
+		for (GameObject object : List.copyOf(getObjects())) object.update();
 	}
 
 	private void addMouseDragging() {
@@ -194,23 +166,42 @@ public class Game extends Scene implements Entity {
 
 	private void addKeyHandler() {
 		addEventHandler(KeyEvent.KEY_PRESSED, e -> {
-			switch (e.getCode()) {
-				case UP:
-					camera.setLayoutY(camera.getLayoutY() - 10);
-					break;
-				case DOWN:
-					camera.setLayoutY(camera.getLayoutY() + 10);
-					break;
-				case LEFT:
-					camera.setLayoutX(camera.getLayoutX() - 10);
-					break;
-				case RIGHT:
-					camera.setLayoutX(camera.getLayoutX() + 10);
-					break;
-				default: break;
+			if (e.getCode().isDigitKey()) {
+				int number = Integer.parseInt(e.getCharacter());
+				if (e.isControlDown()) {
+					for (Unit unit : getSelected()) {
+						unit.setMark(number);
+					}
+				} else {
+					getSelected().clear();
+					for (GameObject object : getObjects()) {
+						if (object instanceof Unit) {
+							Unit unit = (Unit) object;
+							if (unit.getMark() == number) {
+								getSelected().add(unit);
+							}
+						}
+					}
+				}
+			} else {
+				switch (e.getCode()) {
+					case UP:
+						camera.setLayoutY(camera.getLayoutY() - 10);
+						break;
+					case DOWN:
+						camera.setLayoutY(camera.getLayoutY() + 10);
+						break;
+					case LEFT:
+						camera.setLayoutX(camera.getLayoutX() - 10);
+						break;
+					case RIGHT:
+						camera.setLayoutX(camera.getLayoutX() + 10);
+						break;
+					default:
+						break;
+				}
 			}
 		});
-		setOnKeyPressed(Player.getKeyEventHandler());
 	}
 
 	private void addMouseClicking() {
@@ -227,20 +218,6 @@ public class Game extends Scene implements Entity {
 		});
 	}
 
-	private ListChangeListener<GameObject> getGraphicListener(Pane parent) {
-		return change -> {
-			change.next();
-			if (change.wasAdded())
-				for (int index = 0; index < change.getAddedSize(); index++) {
-					GameObject object = change.getAddedSubList().get(index);
-					parent.getChildren().add(object.getPane());
-				}
-			if (change.wasRemoved())
-				for (int index = 0; index < change.getRemovedSize(); index++)
-					parent.getChildren().remove(change.getRemoved().get(index).getPane());
-		};
-	}
-
 	@Nonnull
 	public ObservableSet<Unit> getSelected() {
 		return selected;
@@ -252,33 +229,8 @@ public class Game extends Scene implements Entity {
 	}
 
 	@Nonnull
-	public List<Unit> getUnits() {
-		return units;
-	}
-
-	@Nonnull
-	public List<Projectile> getProjectiles() {
-		return projectiles;
-	}
-
-	@Nonnull
-	public ObservableList<ControlPoint> getControlPoints() {
-		return controlPoints;
-	}
-
-	@Nonnull
-	public ObservableList<Animation> getAnimations() {
-		return animations;
-	}
-
-	@Nonnull
-	public List<Entity> getEntities() {
-		return entities;
-	}
-
-	@Nonnull
-	public Area getArea() {
-		return area;
+	public List<GameObject> getObjects() {
+		return objects;
 	}
 
 	@Nonnull

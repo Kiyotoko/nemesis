@@ -1,11 +1,13 @@
 package org.nemesis.game;
 
 import javafx.geometry.Point2D;
+import org.nemesis.content.FileUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 
-public class SpawnPoint extends GameObject {
+public class SpawnPoint extends Marker {
 
     private final Properties properties;
 
@@ -40,8 +42,21 @@ public class SpawnPoint extends GameObject {
         }
     }
 
+    private @Nullable Player player;
+
     @Override
     public void update() {
+        if (player == null) {
+            System.err.println("** spawn");
+            player = new Player(getGame());
+            for (int i = 0; i < 5; i++) {
+                Unit unit = new Unit(player, FileUtils.getJson("unit/unit.json", Unit.Properties.class));
+                unit.setPosition(getProperties().getPosition());
+            }
+            if (getProperties().getNumber() == 0) {
+                player.markAsController();
+            }
+        }
         // TODO add spawn implementation
     }
 

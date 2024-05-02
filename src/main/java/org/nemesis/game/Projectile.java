@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Random;
 
-public class Projectile extends GameObject implements Kinetic, Destroyable {
+public class Projectile extends GameObject implements Kinetic {
 
 	private final @Nonnull Player player;
 	private final @Nonnull Properties properties;
@@ -25,9 +25,7 @@ public class Projectile extends GameObject implements Kinetic, Destroyable {
 		else setDestination(unit.getPosition());
 
 		getPane().getChildren().add(new ImageView(properties.getPane().getImage()));
-		getIcon().getChildren().add(new ImageView(properties.getIcon().getImage()));
 		setRotation(Math.atan2(getDestination().getY() - getPosition().getY(), getDestination().getX() - getPosition().getX()));
-		getGame().getProjectiles().add(this);
 	}
 
 	public static class Properties extends Identity {
@@ -44,17 +42,6 @@ public class Projectile extends GameObject implements Kinetic, Destroyable {
 
 		public ImageBase getPane() {
 			return pane;
-		}
-
-		private ImageBase icon;
-
-		public Properties setIcon(ImageBase icon) {
-			this.icon = icon;
-			return this;
-		}
-
-		public ImageBase getIcon() {
-			return icon;
 		}
 
 		private double movementSpeed;
@@ -146,11 +133,14 @@ public class Projectile extends GameObject implements Kinetic, Destroyable {
 	private static final @Nonnull Random random = new Random();
 
 	protected void check() {
-		for (Unit unit : List.copyOf(getGame().getUnits())) {
-			if (unit.getPlayer() != getPlayer() && (unit.getPosition().distance(getPosition()) < 10)) {
-				hit(unit);
-				new DamageAnimation(this);
-				destroy();
+		for (Object object : List.copyOf(getGame().getObjects())) {
+			if (object instanceof Unit) {
+				Unit unit = (Unit) object;
+				if (unit.getPlayer() != getPlayer() && (unit.getPosition().distance(getPosition()) < 10)) {
+					hit(unit);
+					new DamageAnimation(this);
+					destroy();
+				}
 			}
 		}
 	}
@@ -159,11 +149,6 @@ public class Projectile extends GameObject implements Kinetic, Destroyable {
 		unit.setHitPoints(unit.getHitPoints() - Math.max(getProperties().getDamage() +
 				random.nextInt((int) (1.0 + getProperties().getCriticalChance())) * getProperties()
 						.getCriticalDamage(), 0) / unit.getProperties().getArmor());
-	}
-
-	@Override
-	public void destroy() {
-		getGame().getProjectiles().remove(this);
 	}
 
 	@Nonnull

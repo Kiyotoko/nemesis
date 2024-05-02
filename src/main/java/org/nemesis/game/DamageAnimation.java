@@ -12,10 +12,10 @@ public class DamageAnimation extends Animation {
     public DamageAnimation(@Nonnull Projectile projectile) {
         super(projectile.getGame());
 
-        getPane().getChildren().add(circle);
-        Color color = projectile.getPlayer().getColor();
-        circle.setStroke(color);
-        circle.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.125));
+        // getPane().getChildren().add(circle);
+        // Color color = projectile.getPlayer().getColor();
+        // circle.setStroke(color);
+        // circle.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.125));
         circle.setCenterX(projectile.getPosition().getX());
         circle.setCenterY(projectile.getPosition().getY());
         setLiveTime(20.0);

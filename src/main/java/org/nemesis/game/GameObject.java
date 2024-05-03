@@ -28,7 +28,7 @@ public abstract class GameObject {
     @WillClose
     public void destroy() {
         getGame().getObjects().remove(this);
-        getGame().getDown().getChildren().add(pane);
+        getGame().getDown().getChildren().remove(pane);
     }
 
     private void relocate() {

@@ -19,15 +19,17 @@ public class Projectile extends GameObject implements Kinetic {
         super(unit.getGame());
         this.player = unit.getPlayer();
 		this.properties = properties;
-		this.position = unit.getPosition();
 
         if (unit.hasTarget()) setDestination(unit.getTarget().getPosition());
 		else setDestination(unit.getPosition());
+		setRotation(unit.getRotation());
+		setPosition(unit.getPosition());
+		setRange(getProperties().getRange());
 
 		getPane().getChildren().add(new ImageView(properties.getPane().getImage()));
-		setRotation(Math.atan2(getDestination().getY() - getPosition().getY(), getDestination().getX() - getPosition().getX()));
 	}
 
+	@SuppressWarnings("unused")
 	public static class Properties extends Identity {
 		public Properties(String id) {
 			super(id);
@@ -35,21 +37,11 @@ public class Projectile extends GameObject implements Kinetic {
 
 		private ImageBase pane;
 
-		public Properties setPane(ImageBase pane) {
-			this.pane = pane;
-			return this;
-		}
-
 		public ImageBase getPane() {
 			return pane;
 		}
 
 		private double movementSpeed;
-
-		public Properties setMovementSpeed(double movementSpeed) {
-			this.movementSpeed = movementSpeed;
-			return this;
-		}
 
 		public double getMovementSpeed() {
 			return movementSpeed;
@@ -57,21 +49,11 @@ public class Projectile extends GameObject implements Kinetic {
 
 		private double damage;
 
-		public Properties setDamage(double damage) {
-			this.damage = damage;
-			return this;
-		}
-
 		public double getDamage() {
 			return damage;
 		}
 
 		private double criticalDamage;
-
-		public Properties setCriticalDamage(double criticalDamage) {
-			this.criticalDamage = criticalDamage;
-			return this;
-		}
 
 		public double getCriticalDamage() {
 			return criticalDamage;
@@ -79,43 +61,53 @@ public class Projectile extends GameObject implements Kinetic {
 
 		private double criticalChance;
 
-		public Properties setCriticalChance(double criticalChance) {
-			this.criticalChance = criticalChance;
-			return this;
-		}
-
 		public double getCriticalChance() {
 			return criticalChance;
 		}
 
+		private double range;
+
+		public double getRange() {
+			return range;
+		}
 	}
 
 	@Override
 	public void update() {
 		displacement();
+		check();
 	}
 
 	@Override
 	public void displacement() {
-		setPosition(getPosition().add(Math.cos(getRotation()) * getProperties().getMovementSpeed(), Math.sin(getRotation()) *
-				getProperties().getMovementSpeed()));
+		double radians = Math.toRadians(getRotation());
+		Point2D next = getPosition().subtract(-Math.sin(radians) * getProperties().getMovementSpeed(),
+				Math.cos(radians) * getProperties().getMovementSpeed());
+		setPosition(next);
 		setRange(getRange() - getProperties().getMovementSpeed());
-		check();
 	}
 
-	private @Nonnull Point2D position;
+	private static final @Nonnull Random random = new Random();
 
-	@Override
-	public void setPosition(@Nonnull Point2D position) {
-		this.position = position;
-		getPane().setLayoutX(position.getX());
-		getPane().setLayoutY(position.getY());
+	protected void check() {
+		for (GameObject object : List.copyOf(getGame().getObjects())) {
+			if (object instanceof Unit) {
+				Unit unit = (Unit) object;
+				if (unit.getPlayer() != getPlayer() && unit.getPane().getBoundsInParent().intersects(
+						getPane().getBoundsInParent())) {
+					hit(unit);
+					new DamageAnimation(this);
+					destroy();
+				}
+			}
+		}
 	}
 
-	@Override
-	@Nonnull
-	public Point2D getPosition() {
-		return position;
+	protected void hit(@Nonnull Unit unit) {
+		double criticalDamage = random.nextInt((int) (1.0 + getProperties().getCriticalChance())) * getProperties()
+				.getCriticalDamage();
+		double damage = (getProperties().getDamage() + criticalDamage) * unit.getProperties().getArmor();
+		unit.setHitPoints(unit.getHitPoints() - damage);
 	}
 
 	private @Nullable Point2D destination;
@@ -130,27 +122,6 @@ public class Projectile extends GameObject implements Kinetic {
 		return destination;
 	}
 
-	private static final @Nonnull Random random = new Random();
-
-	protected void check() {
-		for (Object object : List.copyOf(getGame().getObjects())) {
-			if (object instanceof Unit) {
-				Unit unit = (Unit) object;
-				if (unit.getPlayer() != getPlayer() && (unit.getPosition().distance(getPosition()) < 10)) {
-					hit(unit);
-					new DamageAnimation(this);
-					destroy();
-				}
-			}
-		}
-	}
-
-	protected void hit(@Nonnull Unit unit) {
-		unit.setHitPoints(unit.getHitPoints() - Math.max(getProperties().getDamage() +
-				random.nextInt((int) (1.0 + getProperties().getCriticalChance())) * getProperties()
-						.getCriticalDamage(), 0) / unit.getProperties().getArmor());
-	}
-
 	@Nonnull
 	public Player getPlayer() {
 		return player;
@@ -159,16 +130,6 @@ public class Projectile extends GameObject implements Kinetic {
 	@Nonnull
 	public Properties getProperties() {
 		return properties;
-	}
-
-	private double rotation;
-
-	public void setRotation(double rotation) {
-		this.rotation = rotation;
-	}
-
-	public double getRotation() {
-		return rotation;
 	}
 
 	private double range;

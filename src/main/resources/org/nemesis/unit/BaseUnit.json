@@ -10,8 +10,10 @@
     "scaleX": 1,
     "scaleY": 1
   },
-  "armor": 1.0,
-  "reloadSpeed": 1.0,
+  "projectileId": "Projectile",
+  "armor": 0.3,
+  "reloadSpeed": 80.0,
   "movementSpeed": 1.2,
-  "rotationSpeed": 0.6
+  "rotationSpeed": 0.6,
+  "hitPoints": 100
 }

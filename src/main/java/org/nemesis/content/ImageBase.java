@@ -9,8 +9,9 @@ import java.io.Serializable;
 
 public class ImageBase implements Serializable {
     private final String image;
-    private int scaleX;
-    private int scaleY;
+
+    @SuppressWarnings("all")
+    private int scaleX, scaleY;
 
     public ImageBase(String image) {
         this.image = image;
@@ -38,16 +39,6 @@ public class ImageBase implements Serializable {
         }
 
         return writable;
-    }
-
-    public ImageBase setScaleX(int scaleX) {
-        this.scaleX = scaleX;
-        return this;
-    }
-
-    public ImageBase setScaleY(int scaleY) {
-        this.scaleY = scaleY;
-        return this;
     }
 
     private transient Image loaded;

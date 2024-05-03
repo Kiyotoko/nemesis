@@ -12,17 +12,16 @@ public class DamageAnimation extends Animation {
     public DamageAnimation(@Nonnull Projectile projectile) {
         super(projectile.getGame());
 
-        // getPane().getChildren().add(circle);
-        // Color color = projectile.getPlayer().getColor();
-        // circle.setStroke(color);
-        // circle.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.125));
-        circle.setCenterX(projectile.getPosition().getX());
-        circle.setCenterY(projectile.getPosition().getY());
-        setLiveTime(20.0);
+        setLiveTime(200);
+        setPosition(projectile.getPosition());
+
+        circle.setStroke(Color.gray(0.2));
+        circle.setFill(Color.gray(0.5, 0.125));
+        getPane().getChildren().add(circle);
     }
 
     @Override
     public void animate() {
-        circle.setRadius(circle.getRadius() + 1);
+        circle.setRadius(Math.min(circle.getRadius() + 1, 20));
     }
 }

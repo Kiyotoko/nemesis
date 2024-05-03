@@ -22,7 +22,7 @@ public class ContentLoader {
             }
 
             for (String path : listing.getLabelsToPaths().get("unit")) {
-                Unit.Properties properties = FileUtils.getJson(path, Unit.Properties.class);
+                Unit.Properties properties = FileUtils.getJson(path, Unit.Properties.class).setFactoryFromLoader(this);
                 unitFactoryMap.put(properties.id, new UnitFactory(properties));
             }
         } catch (Exception ex) {

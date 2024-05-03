@@ -25,9 +25,13 @@ public class Player {
         return controller;
     }
 
-    @SuppressWarnings("all")
+    @SuppressWarnings("static")
     public void markAsController() {
-        controller = this;
+        if (controller != this) {
+            if (controller != null)
+                System.err.println("WARNING: Controller was already set");
+            controller = this;
+        }
     }
 
     @CheckReturnValue

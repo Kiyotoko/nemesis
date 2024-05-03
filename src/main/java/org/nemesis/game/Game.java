@@ -81,10 +81,13 @@ public class Game extends Scene {
 
 		Player player = new Player(this);
 		player.markAsController();
+		Player opponent = new Player(this);
+
 		ContentLoader loader = new ContentLoader();
 		UnitFactory factory = loader.getUnitFactory("Unit");
 		if (factory != null) {
-			factory.create(player);
+			factory.create(player).setPosition(new Point2D(100, 400));
+			factory.create(opponent).setPosition(new Point2D(400, 100));
 		}
 	}
 

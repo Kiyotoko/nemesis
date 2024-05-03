@@ -5,10 +5,12 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import org.nemesis.content.ContentLoader;
 import org.nemesis.content.Identity;
 import org.nemesis.content.ImageBase;
 import org.nemesis.content.ProjectileFactory;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,11 +31,12 @@ public class Unit extends GameObject implements Kinetic {
 		this.player = player;
 		this.properties = properties;
 
+		setHitPoints(getProperties().getHitPoints());
+
 		addEventHandler();
 		if (getPlayer().isController()) {
 			animation = new PathAnimation(this);
 		}
-
 		getPane().getChildren().add(new ImageView(properties.getPane().getImage()));
 		getIcon().getChildren().add(new ImageView(properties.getIcon().getImage()));
 		getPlayer().getUnits().add(this);
@@ -57,6 +60,7 @@ public class Unit extends GameObject implements Kinetic {
 		return destinations;
 	}
 
+	@SuppressWarnings("unused")
 	public static class Properties extends Identity {
 
 		public Properties(String id) {
@@ -65,32 +69,31 @@ public class Unit extends GameObject implements Kinetic {
 
 		private ImageBase pane;
 
-		public Properties setPane(ImageBase pane) {
-			this.pane = pane;
-			return this;
-		}
-
 		public ImageBase getPane() {
 			return pane;
 		}
 
 		private ImageBase icon;
 
-		public Properties setIcon(ImageBase icon) {
-			this.icon = icon;
-			return this;
-		}
-
 		public ImageBase getIcon() {
 			return icon;
 		}
 
-		private double armor;
+		private String projectileId;
 
-		public Properties setArmor(double armor) {
-			this.armor = armor;
+		private transient ProjectileFactory factory;
+
+		public Properties setFactoryFromLoader(@Nonnull ContentLoader loader) {
+			this.factory = loader.getProjectileFactory(projectileId);
 			return this;
 		}
+
+		@CheckForNull
+		public ProjectileFactory getFactory() {
+			return factory;
+		}
+
+		private double armor;
 
 		public double getArmor() {
 			return armor;
@@ -98,21 +101,11 @@ public class Unit extends GameObject implements Kinetic {
 
 		private double reloadSpeed;
 
-		public Properties setReloadSpeed(double reloadSpeed) {
-			this.reloadSpeed = reloadSpeed;
-			return this;
-		}
-
 		public double getReloadSpeed() {
 			return reloadSpeed;
 		}
 
 		private double movementSpeed;
-
-		public Properties setMovementSpeed(double movementSpeed) {
-			this.movementSpeed = movementSpeed;
-			return this;
-		}
 
 		public double getMovementSpeed() {
 			return movementSpeed;
@@ -122,6 +115,12 @@ public class Unit extends GameObject implements Kinetic {
 
 		public double getRotationSpeed() {
 			return rotationSpeed;
+		}
+
+		private double hitPoints;
+
+		public double getHitPoints() {
+			return hitPoints;
 		}
 	}
 
@@ -158,15 +157,10 @@ public class Unit extends GameObject implements Kinetic {
 		}
 	}
 
-	@Nonnull
-	public Pane getIcon() {
-		return icon;
-	}
-
 	public void shoot() {
 		if (hasTarget() && !isReloading()) {
 			if (getTarget().getHitPoints() > 0) {
-				ProjectileFactory creator = getProjectileFactory();
+				ProjectileFactory creator = getProperties().getFactory();
 				if (creator != null) {
 					creator.create(this);
 					setReloadTime(getProperties().getReloadSpeed());
@@ -193,7 +187,6 @@ public class Unit extends GameObject implements Kinetic {
 	private void addEventHandler() {
 		getPane().setPickOnBounds(true);
 		getPane().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-			System.out.println(e);
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (getPlayer().isController()) {
 					if (!e.isShiftDown())
@@ -202,6 +195,7 @@ public class Unit extends GameObject implements Kinetic {
 				}
 			} else if (e.getButton() == MouseButton.SECONDARY && !player.isController()) {
 					getGame().getSelected().forEach(unit -> unit.setTarget(this));
+					System.out.printf("Set target for %s to %s%n", getGame().getSelected(), this);
 			}
 		});
 		getIcon().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
@@ -216,7 +210,7 @@ public class Unit extends GameObject implements Kinetic {
 
 	public boolean isPositionAvailable(Point2D next) {
 		for (GameObject object : getGame().getObjects()) {
-			if (!(object instanceof Animation) && object != this && object.getPosition().distance(next) < 16)
+			if (object instanceof Unit && object != this && object.getPane().getBoundsInParent().contains(next))
 				return false;
 		}
 		return true;
@@ -227,18 +221,12 @@ public class Unit extends GameObject implements Kinetic {
 		return properties;
 	}
 
-	private @Nullable ProjectileFactory projectileFactory;
-
-	public void setProjectileFactory(@Nullable ProjectileFactory projectileFactory) {
-		this.projectileFactory = projectileFactory;
-	}
-
-	@Nullable
-	public ProjectileFactory getProjectileFactory() {
-		return projectileFactory;
-	}
-
 	private @Nullable PathAnimation animation;
+
+	@Nonnull
+	public Pane getIcon() {
+		return icon;
+	}
 
 	@Nullable
 	private Unit target;

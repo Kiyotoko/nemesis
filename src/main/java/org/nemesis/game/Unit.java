@@ -1,10 +1,14 @@
 package org.nemesis.game;
 
+import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Polygon;
 import org.nemesis.content.ContentLoader;
 import org.nemesis.content.Identity;
 import org.nemesis.content.ImageBase;
@@ -16,6 +20,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 
 public class Unit extends GameObject implements Kinetic {
 
@@ -25,6 +30,7 @@ public class Unit extends GameObject implements Kinetic {
 	private final @Nonnull Properties properties;
 
 	private final @Nonnull Pane icon = new Pane();
+	private final @Nonnull Polygon collision = new Polygon();
 
 	public Unit(@Nonnull Player player, @Nonnull Properties properties) {
 		super(player.getGame());
@@ -32,6 +38,12 @@ public class Unit extends GameObject implements Kinetic {
 		this.properties = properties;
 
 		setHitPoints(getProperties().getHitPoints());
+		collision.getPoints().addAll(getProperties().getPoints());
+		if (System.getProperty("ShowHitBox") != null) {
+			collision.setFill(Color.TRANSPARENT);
+			collision.setStroke(Color.RED);
+		} else collision.setVisible(false);
+		getGame().getDown().getChildren().add(getCollision());
 
 		addEventHandler();
 		if (getPlayer().isController()) {
@@ -91,6 +103,12 @@ public class Unit extends GameObject implements Kinetic {
 		@CheckForNull
 		public ProjectileFactory getFactory() {
 			return factory;
+		}
+
+		private List<Double> collision;
+
+		public List<Double> getPoints() {
+			return collision;
 		}
 
 		private double armor;
@@ -172,6 +190,11 @@ public class Unit extends GameObject implements Kinetic {
 		setReloadTime(Math.max(getReloadTime() - 1, 0));
 	}
 
+	/**
+	 * Path animation, should be created and destroyed only if player is controller.
+	 */
+	private @Nullable PathAnimation animation;
+
 	@Override
 	public void destroy() {
 		super.destroy();
@@ -181,7 +204,7 @@ public class Unit extends GameObject implements Kinetic {
 			if (animation != null)
 				animation.destroy();
 		}
-		getGame().getDown().getChildren().remove(getPane());
+		getGame().getDown().getChildren().remove(getCollision());
 	}
 
 	private void addEventHandler() {
@@ -210,8 +233,11 @@ public class Unit extends GameObject implements Kinetic {
 
 	public boolean isPositionAvailable(Point2D next) {
 		for (GameObject object : getGame().getObjects()) {
-			if (object instanceof Unit && object != this && object.getPane().getBoundsInParent().contains(next))
-				return false;
+			if (object instanceof Unit && object != this) {
+				Unit unit = (Unit) object;
+				if (unit.getCollisionBounds().contains(next))
+					return false;
+			}
 		}
 		return true;
 	}
@@ -221,11 +247,32 @@ public class Unit extends GameObject implements Kinetic {
 		return properties;
 	}
 
-	private @Nullable PathAnimation animation;
-
 	@Nonnull
 	public Pane getIcon() {
 		return icon;
+	}
+
+	@Nonnull
+	public Node getCollision() {
+		return collision;
+	}
+
+	@Nonnull
+	public Bounds getCollisionBounds() {
+		return getCollision().getBoundsInParent();
+	}
+
+	@Override
+	public void setPosition(@Nonnull Point2D position) {
+		super.setPosition(position);
+		getCollision().setLayoutX(position.getX());
+		getCollision().setLayoutY(position.getY());
+	}
+
+	@Override
+	public void setRotation(double rotation) {
+		super.setRotation(rotation);
+		getCollision().setRotate(rotation);
 	}
 
 	@Nullable

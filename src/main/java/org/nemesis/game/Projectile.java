@@ -93,7 +93,7 @@ public class Projectile extends GameObject implements Kinetic {
 		for (GameObject object : List.copyOf(getGame().getObjects())) {
 			if (object instanceof Unit) {
 				Unit unit = (Unit) object;
-				if (unit.getPlayer() != getPlayer() && unit.getPane().getBoundsInParent().intersects(
+				if (unit.getPlayer() != getPlayer() && unit.getCollisionBounds().intersects(
 						getPane().getBoundsInParent())) {
 					hit(unit);
 					new DamageAnimation(this);

@@ -19,7 +19,7 @@ public abstract class GameObject {
 
         Platform.runLater(this::relocate);
         getGame().getObjects().add(this);
-        getGame().getDown().getChildren().add(pane);
+        getGame().getDown().getChildren().add(getPane());
     }
 
     public abstract void update();
@@ -28,7 +28,7 @@ public abstract class GameObject {
     @WillClose
     public void destroy() {
         getGame().getObjects().remove(this);
-        getGame().getDown().getChildren().remove(pane);
+        getGame().getDown().getChildren().remove(getPane());
     }
 
     private void relocate() {

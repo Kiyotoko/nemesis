@@ -1,0 +1,19 @@
+{
+  "id": "Unit",
+  "pane": {
+    "image": "image/BaseUnit.png",
+    "scaleX": 2,
+    "scaleY": 2
+  },
+  "icon": {
+    "image": "image/BaseUnit.png",
+    "scaleX": 1,
+    "scaleY": 1
+  },
+  "projectileId": "Projectile",
+  "armor": 0.3,
+  "reloadSpeed": 80.0,
+  "movementSpeed": 1.2,
+  "rotationSpeed": 0.6,
+  "hitPoints": 100
+}

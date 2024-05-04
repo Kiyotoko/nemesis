@@ -1,19 +1,15 @@
 package org.nemesis.game;
 
-import javafx.geometry.Point2D;
-
 import javax.annotation.Nonnull;
 
-public abstract class Animation extends Physical {
+public abstract class Animation extends GameObject {
 
-    protected Animation(@Nonnull Player player, @Nonnull Point2D position) {
-        super(player, position);
-        getGame().getAnimations().add(this);
+    protected Animation(@Nonnull Game game) {
+        super(game);
     }
 
     @Override
     public void update() {
-        super.update();
         animate();
         count();
     }
@@ -22,17 +18,6 @@ public abstract class Animation extends Physical {
 
     public void count() {
         setAnimationTime(getAnimationTime() + 1);
-    }
-
-    @Override
-    public void destroy() {
-        super.destroy();
-        getGame().getAnimations().remove(this);
-    }
-
-    @Override
-    public void displacement() {
-        // No displacement
     }
 
     private double animationTime;

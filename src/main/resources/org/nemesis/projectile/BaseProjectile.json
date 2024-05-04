@@ -1,0 +1,13 @@
+{
+  "id": "Projectile",
+  "pane": {
+    "image": "image/BaseProjectile.png",
+    "scaleX": 1,
+    "scaleY": 1
+  },
+  "movementSpeed": 6.0,
+  "damage": 6.0,
+  "criticalDamage": 2.4,
+  "criticalChance": 0.3,
+  "range": 2000
+}

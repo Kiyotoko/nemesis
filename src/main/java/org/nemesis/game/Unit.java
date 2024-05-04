@@ -1,37 +1,132 @@
 package org.nemesis.game;
 
 import javafx.geometry.Point2D;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import org.nemesis.content.ContentLoader;
+import org.nemesis.content.Identity;
+import org.nemesis.content.ImageBase;
+import org.nemesis.content.ProjectileFactory;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.function.Function;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
-public class Unit extends Physical implements Iconable {
+public class Unit extends GameObject implements Kinetic {
+
+	private final @Nonnull Deque<Point2D> destinations = new ArrayDeque<>(4);
+
+	private final @Nonnull Player player;
+	private final @Nonnull Properties properties;
 
 	private final @Nonnull Pane icon = new Pane();
 
-	private @Nullable PathAnimation animation;
+	public Unit(@Nonnull Player player, @Nonnull Properties properties) {
+		super(player.getGame());
+		this.player = player;
+		this.properties = properties;
 
-	public Unit(@Nonnull Player player, @Nonnull Point2D position) {
-		super(player, position);
+		setHitPoints(getProperties().getHitPoints());
+
 		addEventHandler();
-		getGraphic().setVisible(getPlayer().isController());
-		setDestination(position);
 		if (getPlayer().isController()) {
 			animation = new PathAnimation(this);
 		}
-
+		getPane().getChildren().add(new ImageView(properties.getPane().getImage()));
+		getIcon().getChildren().add(new ImageView(properties.getIcon().getImage()));
 		getPlayer().getUnits().add(this);
-		getGame().getUnits().add(this);
+	}
+
+	@CheckReturnValue
+	@Nonnull
+	public Point2D getDestination() {
+		final Point2D checked = getDestinations().peek();
+		return checked != null ? checked : getPosition();
+	}
+
+	public void setDestination(@Nonnull Point2D destination) {
+		getDestinations().clear();
+		getDestinations().add(destination);
+	}
+
+	@CheckReturnValue
+	@Nonnull
+	public Deque<Point2D> getDestinations() {
+		return destinations;
+	}
+
+	@SuppressWarnings("unused")
+	public static class Properties extends Identity {
+
+		public Properties(String id) {
+			super(id);
+		}
+
+		private ImageBase pane;
+
+		public ImageBase getPane() {
+			return pane;
+		}
+
+		private ImageBase icon;
+
+		public ImageBase getIcon() {
+			return icon;
+		}
+
+		private String projectileId;
+
+		private transient ProjectileFactory factory;
+
+		public Properties setFactoryFromLoader(@Nonnull ContentLoader loader) {
+			this.factory = loader.getProjectileFactory(projectileId);
+			return this;
+		}
+
+		@CheckForNull
+		public ProjectileFactory getFactory() {
+			return factory;
+		}
+
+		private double armor;
+
+		public double getArmor() {
+			return armor;
+		}
+
+		private double reloadSpeed;
+
+		public double getReloadSpeed() {
+			return reloadSpeed;
+		}
+
+		private double movementSpeed;
+
+		public double getMovementSpeed() {
+			return movementSpeed;
+		}
+
+		private double rotationSpeed;
+
+		public double getRotationSpeed() {
+			return rotationSpeed;
+		}
+
+		private double hitPoints;
+
+		public double getHitPoints() {
+			return hitPoints;
+		}
 	}
 
 	@Override
 	public void update() {
-		super.update();
+		displacement();
 		shoot();
 	}
 
@@ -39,22 +134,36 @@ public class Unit extends Physical implements Iconable {
 	public void displacement() {
 		if (!getDestinations().isEmpty()) {
 			Point2D difference = getDestination().subtract(getPosition());
-			if (difference.magnitude() > getSpeed()) {
-				Point2D next = getPosition().add(difference.normalize().multiply(getSpeed()));
+			if (difference.magnitude() > getProperties().getMovementSpeed()) {
+				double theta = Math.toDegrees(Math.atan2(difference.getX(), -difference.getY()));
+				double alpha = theta - getRotation();
+				if (alpha > 180) {
+					alpha -= 360;
+				}
+				if (alpha < -180) {
+					alpha += 360;
+				}
+				if (Math.abs(alpha) > getProperties().getRotationSpeed()) {
+					setRotation(getRotation() + Math.signum(alpha) * getProperties().getRotationSpeed());
+				} else {
+					setRotation(getRotation() + alpha);
+				}
+
+				double radians = Math.toRadians(getRotation());
+				Point2D next = getPosition().subtract(-Math.sin(radians) * getProperties().getMovementSpeed(),
+						Math.cos(radians) * getProperties().getMovementSpeed());
 				if (isPositionAvailable(next)) setPosition(next);
 			} else getDestinations().remove();
 		}
-		if (!getPlayer().isController())
-			visible();
 	}
 
 	public void shoot() {
 		if (hasTarget() && !isReloading()) {
 			if (getTarget().getHitPoints() > 0) {
-				Function<Unit, Projectile> creator = getProjectileCreator();
+				ProjectileFactory creator = getProperties().getFactory();
 				if (creator != null) {
-					creator.apply(this);
-					setReloadTime(getReloadSpeed());
+					creator.create(this);
+					setReloadTime(getProperties().getReloadSpeed());
 				}
 			} else {
 				setTarget(null);
@@ -63,63 +172,21 @@ public class Unit extends Physical implements Iconable {
 		setReloadTime(Math.max(getReloadTime() - 1, 0));
 	}
 
-	public void visible() {
-		Field field = getGame().getLevel().getField(getPosition().getX(), getPosition().getY());
-		if (field == null) return;
-		double difference = field.getSightDistance() * 16.0 + 2 * 12.0;
-		for (Unit unit : List.copyOf(getGame().getUnits())) {
-			if (unit.getPlayer() != getPlayer() && (Math.abs(unit.getPosition().getX() - getPosition().getX()) <
-					difference && Math.abs(unit.getPosition().getY() - getPosition().getY()) < difference)) {
-				getGraphic().setVisible(true);
-				return;
-			}
-		}
-		getGraphic().setVisible(false);
-	}
-
-	public void reveal() {
-		Level level = getGame().getLevel();
-		Field inside = level.getField(getPosition().getX(), getPosition().getY());
-		if (inside == null) return;
-		double visibility = inside.getSightDistance();
-		for (double x = -visibility; x < visibility; x++) {
-			for (double y = -visibility; y < visibility; y++) {
-				Field field = level.getField(getPosition().getX()+x*16, getPosition().getY()+y*16);
-				if (field != null) field.setHidden(true);
-			}
-		}
-	}
-
 	@Override
 	public void destroy() {
+		super.destroy();
 		getPlayer().getUnits().remove(this);
-		getGame().getUnits().remove(this);
 		if (getPlayer().isController()) {
 			getGame().getSelected().remove(this);
 			if (animation != null)
 				animation.destroy();
 		}
-	}
-
-	@Override
-	public void relocate() {
-		super.relocate();
-		if (getPlayer().isController())
-			reveal();
-	}
-
-	public void select() {
-		// For override
-	}
-
-	public void deselect() {
-		// For override
+		getGame().getDown().getChildren().remove(getPane());
 	}
 
 	private void addEventHandler() {
-		Player player = getPlayer();
-		getGraphic().setPickOnBounds(true);
-		getGraphic().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+		getPane().setPickOnBounds(true);
+		getPane().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 			if (e.getButton() == MouseButton.PRIMARY) {
 				if (getPlayer().isController()) {
 					if (!e.isShiftDown())
@@ -128,6 +195,7 @@ public class Unit extends Physical implements Iconable {
 				}
 			} else if (e.getButton() == MouseButton.SECONDARY && !player.isController()) {
 					getGame().getSelected().forEach(unit -> unit.setTarget(this));
+					System.out.printf("Set target for %s to %s%n", getGame().getSelected(), this);
 			}
 		});
 		getIcon().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
@@ -141,31 +209,23 @@ public class Unit extends Physical implements Iconable {
 	}
 
 	public boolean isPositionAvailable(Point2D next) {
-		Field field = getGame().getLevel().getField(next.getX(), next.getY());
-		if (field != null && !field.isBlocked()) {
-			for (Unit unit : getPlayer().getGame().getUnits()) {
-				if (unit != this && unit.getPosition().distance(next) < 16) return false;
-			}
-			return true;
+		for (GameObject object : getGame().getObjects()) {
+			if (object instanceof Unit && object != this && object.getPane().getBoundsInParent().contains(next))
+				return false;
 		}
-		return false;
+		return true;
 	}
 
 	@Nonnull
-	@Override
+	public Properties getProperties() {
+		return properties;
+	}
+
+	private @Nullable PathAnimation animation;
+
+	@Nonnull
 	public Pane getIcon() {
 		return icon;
-	}
-
-	private @Nullable Function<Unit, Projectile> projectileCreator;
-
-	public void setProjectileCreator(@Nullable Function<Unit, Projectile> projectileCreator) {
-		this.projectileCreator = projectileCreator;
-	}
-
-	@Nullable
-	public Function<Unit, Projectile> getProjectileCreator() {
-		return projectileCreator;
 	}
 
 	@Nullable
@@ -186,25 +246,16 @@ public class Unit extends Physical implements Iconable {
 		this.target = target;
 	}
 
-	private double hitPoints = 1;
+	public static final int UNMARKED = 0;
 
-	public double getHitPoints() {
-		return hitPoints;
+	private int mark = UNMARKED;
+
+	public void setMark(int mark) {
+		this.mark = mark;
 	}
 
-	public void setHitPoints(double hitPoints) {
-		this.hitPoints = hitPoints;
-		if (hitPoints <= 0) destroy();
-	}
-
-	private double armor = 1;
-
-	public double getArmor() {
-		return armor;
-	}
-
-	public void setArmor(double armor) {
-		this.armor = armor;
+	public int getMark() {
+		return mark;
 	}
 
 	private double reloadTime = 0;
@@ -221,25 +272,19 @@ public class Unit extends Physical implements Iconable {
 		return reloadTime;
 	}
 
-	private double reloadSpeed = 1;
+	private double hitPoints = 1;
 
-	public void setReloadSpeed(double reloadSpeed) {
-		this.reloadSpeed = reloadSpeed;
+	public double getHitPoints() {
+		return hitPoints;
 	}
 
-	public double getReloadSpeed() {
-		return reloadSpeed;
+	public void setHitPoints(double hitPoints) {
+		this.hitPoints = hitPoints;
+		if (hitPoints <= 0) destroy();
 	}
 
-	public static final int UNMARKED = 0;
-
-	private int mark = UNMARKED;
-
-	public void setMark(int mark) {
-		this.mark = mark;
-	}
-
-	public int getMark() {
-		return mark;
+	@Nonnull
+	public Player getPlayer() {
+		return player;
 	}
 }

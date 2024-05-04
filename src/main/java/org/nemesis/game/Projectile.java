@@ -1,62 +1,135 @@
 package org.nemesis.game;
 
-import javax.annotation.CheckReturnValue;
+import javafx.geometry.Point2D;
+import javafx.scene.image.ImageView;
+import org.nemesis.content.Identity;
+import org.nemesis.content.ImageBase;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Random;
 
-public class Projectile extends Physical {
+public class Projectile extends GameObject implements Kinetic {
 
-	public Projectile(@Nonnull Unit unit) {
-		super(unit.getPlayer(), unit.getPosition());
+	private final @Nonnull Player player;
+	private final @Nonnull Properties properties;
 
-		if (unit.hasTarget())
-			setDestination(unit.getTarget().getPosition());
-		else {
-			setDestination(unit.getPosition());
+	public Projectile(@Nonnull Unit unit, @Nonnull Properties properties) {
+        super(unit.getGame());
+        this.player = unit.getPlayer();
+		this.properties = properties;
+
+        if (unit.hasTarget()) setDestination(unit.getTarget().getPosition());
+		else setDestination(unit.getPosition());
+		setRotation(unit.getRotation());
+		setPosition(unit.getPosition());
+		setRange(getProperties().getRange());
+
+		getPane().getChildren().add(new ImageView(properties.getPane().getImage()));
+	}
+
+	@SuppressWarnings("unused")
+	public static class Properties extends Identity {
+		public Properties(String id) {
+			super(id);
 		}
-		setRotation(Math.atan2(getDestination().getY() - getPosition().getY(), getDestination().getX() - getPosition().getX()));
-		getGame().getProjectiles().add(this);
+
+		private ImageBase pane;
+
+		public ImageBase getPane() {
+			return pane;
+		}
+
+		private double movementSpeed;
+
+		public double getMovementSpeed() {
+			return movementSpeed;
+		}
+
+		private double damage;
+
+		public double getDamage() {
+			return damage;
+		}
+
+		private double criticalDamage;
+
+		public double getCriticalDamage() {
+			return criticalDamage;
+		}
+
+		private double criticalChance;
+
+		public double getCriticalChance() {
+			return criticalChance;
+		}
+
+		private double range;
+
+		public double getRange() {
+			return range;
+		}
+	}
+
+	@Override
+	public void update() {
+		displacement();
+		check();
 	}
 
 	@Override
 	public void displacement() {
-		setPosition(getPosition().add(Math.cos(getRotation()) * getSpeed(), Math.sin(getRotation()) * getSpeed()));
-		setRange(getRange() - getSpeed());
-		check();
+		double radians = Math.toRadians(getRotation());
+		Point2D next = getPosition().subtract(-Math.sin(radians) * getProperties().getMovementSpeed(),
+				Math.cos(radians) * getProperties().getMovementSpeed());
+		setPosition(next);
+		setRange(getRange() - getProperties().getMovementSpeed());
 	}
 
 	private static final @Nonnull Random random = new Random();
 
 	protected void check() {
-		for (Unit unit : List.copyOf(getGame().getUnits())) {
-			if (unit.getPlayer() != getPlayer() && (unit.getPosition().distance(getPosition()) < 10)) {
-				hit(unit);
-				new DamageAnimation(this);
-				destroy();
+		for (GameObject object : List.copyOf(getGame().getObjects())) {
+			if (object instanceof Unit) {
+				Unit unit = (Unit) object;
+				if (unit.getPlayer() != getPlayer() && unit.getPane().getBoundsInParent().intersects(
+						getPane().getBoundsInParent())) {
+					hit(unit);
+					new DamageAnimation(this);
+					destroy();
+				}
 			}
 		}
 	}
 
 	protected void hit(@Nonnull Unit unit) {
-		unit.setHitPoints(unit.getHitPoints() - Math.max(getDamage() +
-				random.nextInt((int) (1.0 + getCriticalChance())) * getCriticalDamage(), 0) / unit.getArmor());
+		double criticalDamage = random.nextInt((int) (1.0 + getProperties().getCriticalChance())) * getProperties()
+				.getCriticalDamage();
+		double damage = (getProperties().getDamage() + criticalDamage) * unit.getProperties().getArmor();
+		unit.setHitPoints(unit.getHitPoints() - damage);
 	}
 
-	@Override
-	public void destroy() {
-		super.destroy();
-		getGame().getProjectiles().remove(this);
+	private @Nullable Point2D destination;
+
+	public void setDestination(@Nullable Point2D destination) {
+		this.destination = destination;
 	}
 
-	private double rotation;
-
-	public void setRotation(double rotation) {
-		this.rotation = rotation;
+	@Nonnull
+	public Point2D getDestination() {
+		if (destination == null) return getPosition();
+		return destination;
 	}
 
-	public double getRotation() {
-		return rotation;
+	@Nonnull
+	public Player getPlayer() {
+		return player;
+	}
+
+	@Nonnull
+	public Properties getProperties() {
+		return properties;
 	}
 
 	private double range;
@@ -68,38 +141,5 @@ public class Projectile extends Physical {
 	public void setRange(double range) {
 		this.range = range;
 		if (range <= 0) destroy();
-	}
-
-	private double damage;
-
-	@CheckReturnValue
-	public double getDamage() {
-		return damage;
-	}
-
-	public void setDamage(double damage) {
-		this.damage = damage;
-	}
-
-	private double criticalDamage;
-
-	@CheckReturnValue
-	public double getCriticalDamage() {
-		return criticalDamage;
-	}
-
-	public void setCriticalDamage(double criticalDamage) {
-		this.criticalDamage = criticalDamage;
-	}
-
-	private double criticalChance;
-
-	@CheckReturnValue
-	public double getCriticalChance() {
-		return criticalChance;
-	}
-
-	public void setCriticalChance(double criticalChance) {
-		this.criticalChance = criticalChance;
 	}
 }

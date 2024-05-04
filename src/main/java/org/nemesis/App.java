@@ -1,16 +1,15 @@
 package org.nemesis;
 
 import javafx.application.Application;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import org.nemesis.menu.Menu;
+import org.nemesis.game.Game;
 
 public class App extends Application {
 
 	@Override
 	public void start(Stage stage) {
-		Menu menu = new Menu(stage);
-
-		stage.setScene(menu);
+		stage.setScene(new Game(new BorderPane()));
 		stage.show();
 	}
 }

@@ -5,10 +5,10 @@ import org.nemesis.content.Identity;
 
 import javax.annotation.Nonnull;
 
-public class Engine extends HardPoint implements Kinetic {
-    private final Properties properties;
+public class Engine extends HardPoint {
+    private final @Nonnull Properties properties;
 
-    public Engine(@Nonnull Unit unit, Properties properties) {
+    public Engine(@Nonnull Unit unit, @Nonnull Properties properties) {
         super(unit);
         this.properties = properties;
     }
@@ -34,11 +34,6 @@ public class Engine extends HardPoint implements Kinetic {
 
     @Override
     public void update() {
-        displacement();
-    }
-
-    @Override
-    public void displacement() {
         if (!getUnit().getDestinations().isEmpty()) {
             Point2D difference = getUnit().getDestination().subtract(getUnit().getPosition());
             if (difference.magnitude() > getProperties().getMovementSpeed()) {
@@ -64,6 +59,7 @@ public class Engine extends HardPoint implements Kinetic {
         }
     }
 
+    @Nonnull
     public Properties getProperties() {
         return properties;
     }

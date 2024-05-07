@@ -8,7 +8,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 import javax.annotation.WillClose;
 
-public abstract class GameObject {
+public abstract class GameObject implements Entity {
 
     private final @Nonnull Game game;
 
@@ -21,8 +21,6 @@ public abstract class GameObject {
         getGame().getObjects().add(this);
         getGame().getDown().getChildren().add(getPane());
     }
-
-    public abstract void update();
 
     @OverridingMethodsMustInvokeSuper
     @WillClose

@@ -16,7 +16,13 @@ public final class Factories {
     }
 
     public static Factory<Player, Unit> createFactory(Unit.Properties properties) {
-        return player -> new Unit(player, properties);
+        return player -> {
+            Unit unit = new Unit(player, properties);
+            for (var factory : unit.getProperties().getFactories()) {
+                unit.getHardPoints().add(factory.create(unit));
+            }
+            return unit;
+        };
     }
 
     public static Factory<Unit, Projectile> createFactory(Projectile.Properties properties) {

@@ -2,14 +2,12 @@ package org.nemesis.game;
 
 import javax.annotation.Nonnull;
 
-public abstract class HardPoint {
+public abstract class HardPoint implements Entity {
     private final @Nonnull Unit unit;
 
     protected HardPoint(@Nonnull Unit unit) {
         this.unit = unit;
     }
-
-    public abstract void update();
 
     @Nonnull
     public Unit getUnit() {

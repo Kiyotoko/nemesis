@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Random;
 
-public class Projectile extends GameObject implements Kinetic {
+public class Projectile extends GameObject {
 
 	private final @Nonnull Player player;
 	private final @Nonnull Properties properties;
@@ -78,7 +78,6 @@ public class Projectile extends GameObject implements Kinetic {
 		check();
 	}
 
-	@Override
 	public void displacement() {
 		double radians = Math.toRadians(getRotation());
 		Point2D next = getPosition().subtract(-Math.sin(radians) * getProperties().getMovementSpeed(),

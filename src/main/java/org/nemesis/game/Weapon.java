@@ -8,7 +8,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
 public class Weapon extends HardPoint {
-    private final Properties properties;
+    private final @Nonnull Properties properties;
 
     public Weapon(@Nonnull Unit unit, @Nonnull Properties properties) {
         super(unit);
@@ -44,10 +44,6 @@ public class Weapon extends HardPoint {
 
     @Override
     public void update() {
-        shoot();
-    }
-
-    public void shoot() {
         if (getUnit().hasTarget() && !isReloading()) {
             if (getUnit().getTarget().getHitPoints() > 0) {
                 Factory<Unit, Projectile> creator = getProperties().getFactory();
@@ -62,6 +58,11 @@ public class Weapon extends HardPoint {
         setReloadTime(Math.max(getReloadTime() - 1, 0));
     }
 
+    @Nonnull
+    public Properties getProperties() {
+        return properties;
+    }
+
     private double reloadTime = 0;
 
     public boolean isReloading() {
@@ -74,9 +75,5 @@ public class Weapon extends HardPoint {
 
     public double getReloadTime() {
         return reloadTime;
-    }
-
-    public Properties getProperties() {
-        return properties;
     }
 }

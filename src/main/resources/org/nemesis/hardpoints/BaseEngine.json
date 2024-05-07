@@ -1,5 +1,5 @@
 {
-  "id": "BaseWeapon",
+  "id": "BaseEngine",
   "movementSpeed": 1.2,
   "rotationSpeed": 0.6
 }

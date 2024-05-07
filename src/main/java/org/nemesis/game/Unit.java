@@ -11,17 +11,18 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 import org.nemesis.content.*;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-public class Unit extends GameObject implements Kinetic {
+public class Unit extends GameObject {
 
 	private final @Nonnull Deque<Point2D> destinations = new ArrayDeque<>(4);
+	private final @Nonnull List<HardPoint> hardPoints = new ArrayList<>();
 
 	private final @Nonnull Player player;
 	private final @Nonnull Properties properties;
@@ -69,7 +70,7 @@ public class Unit extends GameObject implements Kinetic {
 		return destinations;
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings("all")
 	public static class Properties extends Identity {
 
 		public Properties(@Nonnull String id) {
@@ -88,18 +89,21 @@ public class Unit extends GameObject implements Kinetic {
 			return icon;
 		}
 
-		private String projectileId;
+		private List<String> hardPointIds;
 
-		private transient Factory<Unit, Projectile> factory;
+		private transient List<Factory<Unit, ? extends HardPoint>> factories;
+
+		public List<Factory<Unit, ? extends HardPoint>> getFactories() {
+			return factories;
+		}
 
 		@Override
 		public void withContentLoader(@Nonnull ContentLoader loader) {
-			factory = loader.getProjectileFactory(projectileId);
-		}
-
-		@CheckForNull
-		public Factory<Unit, Projectile> getFactory() {
-			return factory;
+			// factory = loader.getProjectileFactory(projectileId);
+			factories = new ArrayList<>();
+			for (String id : hardPointIds) {
+				factories.add(loader.getHardPointFactoryMap().get(id));
+			}
 		}
 
 		private List<Double> collision;
@@ -114,24 +118,6 @@ public class Unit extends GameObject implements Kinetic {
 			return armor;
 		}
 
-		private double reloadSpeed;
-
-		public double getReloadSpeed() {
-			return reloadSpeed;
-		}
-
-		private double movementSpeed;
-
-		public double getMovementSpeed() {
-			return movementSpeed;
-		}
-
-		private double rotationSpeed;
-
-		public double getRotationSpeed() {
-			return rotationSpeed;
-		}
-
 		private double hitPoints;
 
 		public double getHitPoints() {
@@ -141,50 +127,9 @@ public class Unit extends GameObject implements Kinetic {
 
 	@Override
 	public void update() {
-		displacement();
-		shoot();
-	}
-
-	@Override
-	public void displacement() {
-		if (!getDestinations().isEmpty()) {
-			Point2D difference = getDestination().subtract(getPosition());
-			if (difference.magnitude() > getProperties().getMovementSpeed()) {
-				double theta = Math.toDegrees(Math.atan2(difference.getX(), -difference.getY()));
-				double alpha = theta - getRotation();
-				if (alpha > 180) {
-					alpha -= 360;
-				}
-				if (alpha < -180) {
-					alpha += 360;
-				}
-				if (Math.abs(alpha) > getProperties().getRotationSpeed()) {
-					setRotation(getRotation() + Math.signum(alpha) * getProperties().getRotationSpeed());
-				} else {
-					setRotation(getRotation() + alpha);
-				}
-
-				double radians = Math.toRadians(getRotation());
-				Point2D next = getPosition().subtract(-Math.sin(radians) * getProperties().getMovementSpeed(),
-						Math.cos(radians) * getProperties().getMovementSpeed());
-				if (isPositionAvailable(next)) setPosition(next);
-			} else getDestinations().remove();
+		for (HardPoint hardPoint : getHardPoints()) {
+			hardPoint.update();
 		}
-	}
-
-	public void shoot() {
-		if (hasTarget() && !isReloading()) {
-			if (getTarget().getHitPoints() > 0) {
-				Factory<Unit, Projectile> creator = getProperties().getFactory();
-				if (creator != null) {
-					creator.create(this);
-					setReloadTime(getProperties().getReloadSpeed());
-				}
-			} else {
-				setTarget(null);
-			}
-		}
-		setReloadTime(Math.max(getReloadTime() - 1, 0));
 	}
 
 	/**
@@ -240,8 +185,18 @@ public class Unit extends GameObject implements Kinetic {
 	}
 
 	@Nonnull
+	public Player getPlayer() {
+		return player;
+	}
+
+	@Nonnull
 	public Properties getProperties() {
 		return properties;
+	}
+
+	@Nonnull
+	public List<HardPoint> getHardPoints() {
+		return hardPoints;
 	}
 
 	@Nonnull
@@ -301,21 +256,6 @@ public class Unit extends GameObject implements Kinetic {
 	public int getMark() {
 		return mark;
 	}
-
-	private double reloadTime = 0;
-
-	public boolean isReloading() {
-		return reloadTime > 0;
-	}
-
-	public void setReloadTime(double reloadTime) {
-		this.reloadTime = reloadTime;
-	}
-
-	public double getReloadTime() {
-		return reloadTime;
-	}
-
 	private double hitPoints = 1;
 
 	public double getHitPoints() {
@@ -325,10 +265,5 @@ public class Unit extends GameObject implements Kinetic {
 	public void setHitPoints(double hitPoints) {
 		this.hitPoints = hitPoints;
 		if (hitPoints <= 0) destroy();
-	}
-
-	@Nonnull
-	public Player getPlayer() {
-		return player;
 	}
 }

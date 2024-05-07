@@ -6,6 +6,7 @@ Nemesis is a 4x multiplayer game where you try to discover and defend the star s
 
 ```mermaid
 classDiagram
+    Entity <-- GameObject
     GameObject <-- Animation
     Animation <-- DamageAnimation
     Animation <-- PathAnimation
@@ -14,6 +15,7 @@ classDiagram
     Marker <-- SpawnPoint
     GameObject <-- Unit
     GameObject <-- Projectile
-    Kinetic <-- Unit
-    Kinetic <-- Projectile
+    Entity <-- HardPoint
+    HardPoint <-- Weapon
+    HardPoint <-- Engine
 ```

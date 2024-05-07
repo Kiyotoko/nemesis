@@ -14,7 +14,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import org.nemesis.content.ContentLoader;
-import org.nemesis.content.UnitFactory;
+import org.nemesis.content.Factory;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -84,7 +84,7 @@ public class Game extends Scene {
 		Player opponent = new Player(this);
 
 		ContentLoader loader = new ContentLoader();
-		UnitFactory factory = loader.getUnitFactory("Unit");
+		Factory<Player, Unit> factory = loader.getUnitFactory("Unit");
 		if (factory != null) {
 			factory.create(player).setPosition(new Point2D(100, 400));
 			factory.create(opponent).setPosition(new Point2D(400, 100));

@@ -3,8 +3,7 @@ package org.nemesis.content;
 import org.dosl.DoslListing;
 import org.dosl.DoslUtilsKt;
 import org.nemesis.Launcher;
-import org.nemesis.game.Projectile;
-import org.nemesis.game.Unit;
+import org.nemesis.game.*;
 
 import javax.annotation.CheckForNull;
 import java.util.HashMap;
@@ -18,29 +17,46 @@ public class ContentLoader {
 
             for (String path : listing.getLabelsToPaths().get("projectile")) {
                 Projectile.Properties properties = FileUtils.getJson(path, Projectile.Properties.class);
-                projectileFactoryMap.put(properties.id, new ProjectileFactory(properties));
+                projectileFactoryMap.put(properties.id, Factories.createFactory(properties));
+            }
+
+            for (String path: listing.getLabelsToPaths().get("weapon")) {
+                Weapon.Properties properties = FileUtils.getJson(path, Weapon.Properties.class);
+                properties.withContentLoader(this);
+                hardPointFactoryMap.put(properties.id, Factories.createFactory(properties));
+            }
+            for (String path: listing.getLabelsToPaths().get("engine")) {
+                Engine.Properties properties = FileUtils.getJson(path, Engine.Properties.class);
+                hardPointFactoryMap.put(properties.id, Factories.createFactory(properties));
             }
 
             for (String path : listing.getLabelsToPaths().get("unit")) {
-                Unit.Properties properties = FileUtils.getJson(path, Unit.Properties.class).setFactoryFromLoader(this);
-                unitFactoryMap.put(properties.id, new UnitFactory(properties));
+                Unit.Properties properties = FileUtils.getJson(path, Unit.Properties.class);
+                properties.withContentLoader(this);
+                unitFactoryMap.put(properties.id, Factories.createFactory(properties));
             }
         } catch (Exception ex) {
             throw new InternalError(ex);
         }
     }
 
-    private final Map<String, UnitFactory> unitFactoryMap = new HashMap<>();
+    private final Map<String, Factory<Unit, Projectile>> projectileFactoryMap = new HashMap<>();
 
     @CheckForNull
-    public UnitFactory getUnitFactory(String id) {
-        return unitFactoryMap.get(id);
+    public Factory<Unit, Projectile> getProjectileFactory(String id) {
+        return projectileFactoryMap.get(id);
     }
 
-    private final Map<String, ProjectileFactory> projectileFactoryMap = new HashMap<>();
+    private final Map<String, Factory<Unit, ? extends HardPoint>> hardPointFactoryMap = new HashMap<>();
+
+    public Map<String, Factory<Unit, ? extends HardPoint>> getHardPointFactoryMap() {
+        return hardPointFactoryMap;
+    }
+
+    private final Map<String, Factory<Player, Unit>> unitFactoryMap = new HashMap<>();
 
     @CheckForNull
-    public ProjectileFactory getProjectileFactory(String id) {
-        return projectileFactoryMap.get(id);
+    public Factory<Player, Unit> getUnitFactory(String id) {
+        return unitFactoryMap.get(id);
     }
 }

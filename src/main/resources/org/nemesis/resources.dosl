@@ -5,3 +5,13 @@
 @projectile "projectile/" {
     "BaseProjectile.json"
 }
+
+"hardpoints/" {
+    @engine {
+        "BaseEngine.json"
+    }
+
+    @weapon {
+        "BaseWeapon.json"
+    }
+}

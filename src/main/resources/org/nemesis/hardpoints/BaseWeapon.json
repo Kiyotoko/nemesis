@@ -1,0 +1,5 @@
+{
+  "id": "BaseWeapon",
+  "projectileId": "Projectile",
+  "reloadSpeed": 80.0
+}

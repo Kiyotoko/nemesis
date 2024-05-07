@@ -9,10 +9,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
-import org.nemesis.content.ContentLoader;
-import org.nemesis.content.Identity;
-import org.nemesis.content.ImageBase;
-import org.nemesis.content.ProjectileFactory;
+import org.nemesis.content.*;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.CheckReturnValue;
@@ -75,7 +72,7 @@ public class Unit extends GameObject implements Kinetic {
 	@SuppressWarnings("unused")
 	public static class Properties extends Identity {
 
-		public Properties(String id) {
+		public Properties(@Nonnull String id) {
 			super(id);
 		}
 
@@ -93,15 +90,15 @@ public class Unit extends GameObject implements Kinetic {
 
 		private String projectileId;
 
-		private transient ProjectileFactory factory;
+		private transient Factory<Unit, Projectile> factory;
 
-		public Properties setFactoryFromLoader(@Nonnull ContentLoader loader) {
-			this.factory = loader.getProjectileFactory(projectileId);
-			return this;
+		@Override
+		public void withContentLoader(@Nonnull ContentLoader loader) {
+			factory = loader.getProjectileFactory(projectileId);
 		}
 
 		@CheckForNull
-		public ProjectileFactory getFactory() {
+		public Factory<Unit, Projectile> getFactory() {
 			return factory;
 		}
 
@@ -178,7 +175,7 @@ public class Unit extends GameObject implements Kinetic {
 	public void shoot() {
 		if (hasTarget() && !isReloading()) {
 			if (getTarget().getHitPoints() > 0) {
-				ProjectileFactory creator = getProperties().getFactory();
+				Factory<Unit, Projectile> creator = getProperties().getFactory();
 				if (creator != null) {
 					creator.create(this);
 					setReloadTime(getProperties().getReloadSpeed());

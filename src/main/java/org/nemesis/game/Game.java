@@ -84,10 +84,14 @@ public class Game extends Scene {
 		Player opponent = new Player(this);
 
 		ContentLoader loader = new ContentLoader();
-		Factory<Player, Unit> factory = loader.getUnitFactory("Unit");
+		Factory<Player, Unit> factory = loader.getUnitFactory("BaseUnit");
 		if (factory != null) {
 			factory.create(player).setPosition(new Point2D(100, 400));
 			factory.create(opponent).setPosition(new Point2D(400, 100));
+		}
+		Factory<Player, Unit> cruiser = loader.getUnitFactory("Cruiser");
+		if (cruiser != null) {
+			cruiser.create(player).setPosition(new Point2D(200, 400));
 		}
 	}
 

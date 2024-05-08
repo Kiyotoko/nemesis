@@ -12,12 +12,12 @@ import java.util.Random;
 
 public class Projectile extends GameObject {
 
-	private final @Nonnull Player player;
+	private final @Nonnull Unit unit;
 	private final @Nonnull Properties properties;
 
 	public Projectile(@Nonnull Weapon weapon, @Nonnull Properties properties) {
         super(weapon.getUnit().getGame());
-        this.player = weapon.getUnit().getPlayer();
+        this.unit = weapon.getUnit();
 		this.properties = properties;
 
         if (weapon.getUnit().hasTarget()) setDestination(weapon.getUnit().getTarget().getPosition());
@@ -41,10 +41,22 @@ public class Projectile extends GameObject {
 			return pane;
 		}
 
+		private boolean followingTarget;
+
+		public boolean isFollowingTarget() {
+			return followingTarget;
+		}
+
 		private double movementSpeed;
 
 		public double getMovementSpeed() {
 			return movementSpeed;
+		}
+
+		private double rotationSpeed;
+
+		public double getRotationSpeed() {
+			return rotationSpeed;
 		}
 
 		private double damage;
@@ -70,18 +82,38 @@ public class Projectile extends GameObject {
 		public double getRange() {
 			return range;
 		}
-
-		private boolean rotatable;
-
-		public boolean isRotatable() {
-			return rotatable;
-		}
 	}
 
 	@Override
 	public void update() {
+		if (getProperties().isFollowingTarget())
+			follow();
+		if (getProperties().getRotationSpeed() > 0)
+			rotate();
 		displacement();
 		check();
+	}
+
+	public void follow() {
+		if (getUnit().hasTarget())
+			setDestination(getUnit().getTarget().getPosition());
+	}
+
+	public void rotate() {
+		Point2D difference = getDestination().subtract(getPosition());
+		double theta = Math.toDegrees(Math.atan2(difference.getX(), -difference.getY()));
+		double alpha = theta - getRotation();
+		if (alpha > 180) {
+			alpha -= 360;
+		}
+		if (alpha < -180) {
+			alpha += 360;
+		}
+		if (Math.abs(alpha) > getProperties().getRotationSpeed()) {
+			setRotation(getRotation() + Math.signum(alpha) * getProperties().getRotationSpeed());
+		} else {
+			setRotation(theta);
+		}
 	}
 
 	public void displacement() {
@@ -97,10 +129,10 @@ public class Projectile extends GameObject {
 	protected void check() {
 		for (GameObject object : List.copyOf(getGame().getObjects())) {
 			if (object instanceof Unit) {
-				Unit unit = (Unit) object;
-				if (unit.getPlayer() != getPlayer() && unit.getCollisionBounds().intersects(
+				Unit damageable = (Unit) object;
+				if (damageable.getPlayer() != getUnit().getPlayer() && damageable.getCollisionBounds().intersects(
 						getPane().getBoundsInParent())) {
-					hit(unit);
+					hit(damageable);
 					new DamageAnimation(this);
 					destroy();
 				}
@@ -128,8 +160,8 @@ public class Projectile extends GameObject {
 	}
 
 	@Nonnull
-	public Player getPlayer() {
-		return player;
+	public Unit getUnit() {
+		return unit;
 	}
 
 	@Nonnull

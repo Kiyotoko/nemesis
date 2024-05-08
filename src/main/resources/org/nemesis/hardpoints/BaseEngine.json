@@ -1,5 +1,5 @@
 {
   "id": "BaseEngine",
-  "movementSpeed": 1.2,
-  "rotationSpeed": 0.6
+  "movementSpeed": 0.8,
+  "rotationSpeed": 0.2
 }

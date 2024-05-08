@@ -1,0 +1,15 @@
+{
+  "id": "Rocket",
+  "pane": {
+    "image": "image/Rocket.png",
+    "scaleX": 1,
+    "scaleY": 1
+  },
+  "followingTarget": true,
+  "movementSpeed": 2.0,
+  "rotationSpeed": 0.6,
+  "damage": 8.0,
+  "criticalDamage": 3.0,
+  "criticalChance": 0.32,
+  "range": 1500
+}

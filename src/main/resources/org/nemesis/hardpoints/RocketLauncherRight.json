@@ -1,0 +1,6 @@
+{
+  "id": "RockerLauncherRight",
+  "projectileId": "Rocket",
+  "reloadSpeed": 200.0,
+  "initRotation": 90.0
+}

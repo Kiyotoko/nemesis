@@ -103,7 +103,11 @@ public class Unit extends GameObject {
 		public void withContentLoader(@Nonnull ContentLoader loader) {
 			hardPointFactories = new HashMap<>();
 			for (Map.Entry<String, List<Point2D>> entry : hardPoints.entrySet()) {
-				getHardPointFactories().put(loader.getHardPointFactoryMap().get(entry.getKey()), entry.getValue());
+				var factory = loader.getHardPointFactoryMap().get(entry.getKey());
+				if (factory != null)
+					getHardPointFactories().put(factory, entry.getValue());
+				else System.err.printf("WARNING: No factory found for %s in %s, skipping hard point%n",
+						entry.getKey(), id);
 			}
 		}
 

@@ -1,0 +1,38 @@
+{
+  "id": "Cruiser",
+  "pane": {
+    "image": "image/Cruiser.png",
+    "scaleX": 1,
+    "scaleY": 1
+  },
+  "icon": {
+    "image": "image/Cruiser.png",
+    "scaleX": 1,
+    "scaleY": 1
+  },
+  "hardPoints": {
+    "RocketLauncherLeft":  [
+      {
+        "x": -10,
+        "y": -30
+      }
+    ],
+    "RockerLauncherRight": [
+      {
+        "x": 10,
+        "y": -30
+      }
+    ],
+    "BaseEngine": [
+      {
+        "x": 0,
+        "y": 90
+      }
+    ]
+  },
+  "collision": [
+    -30, -70, 30, -70, 30, 70, -30, 70
+  ],
+  "armor": 0.2,
+  "hitPoints": 80
+}

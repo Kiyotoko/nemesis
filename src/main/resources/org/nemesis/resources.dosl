@@ -1,9 +1,11 @@
 @unit "unit/" {
     "BaseUnit.json"
+    "Cruiser.json"
 }
 
 @projectile "projectile/" {
     "BaseProjectile.json"
+    "Rocket.json"
 }
 
 "hardpoints/" {
@@ -13,5 +15,7 @@
 
     @weapon {
         "BaseWeapon.json"
+        "RocketLauncherRight.json"
+        "RocketLauncherLeft.json"
     }
 }

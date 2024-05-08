@@ -1,5 +1,6 @@
 package org.nemesis.game;
 
+import javafx.geometry.Point2D;
 import org.nemesis.content.ContentLoader;
 import org.nemesis.content.Factory;
 import org.nemesis.content.Identity;
@@ -44,10 +45,10 @@ public class Weapon extends HardPoint {
             return reloadSpeed;
         }
 
-        private boolean rotatable;
+        private double rotationSpeed;
 
-        public boolean isRotatable() {
-            return rotatable;
+        public double getRotationSpeed() {
+            return rotationSpeed;
         }
 
         private double initRotation;
@@ -59,6 +60,31 @@ public class Weapon extends HardPoint {
 
     @Override
     public void update() {
+        if (getProperties().getRotationSpeed() > 0)
+            rotate();
+        shoot();
+    }
+
+    public void rotate() {
+        if (getUnit().hasTarget()) {
+            Point2D difference = getUnit().getTarget().getPosition().subtract(getTransformedPosition());
+            double theta = Math.toDegrees(Math.atan2(difference.getX(), -difference.getY()));
+            double alpha = theta - getTransformedRotation();
+            if (alpha > 180) {
+                alpha -= 360;
+            }
+            if (alpha < -180) {
+                alpha += 360;
+            }
+            if (Math.abs(alpha) > getProperties().getRotationSpeed()) {
+                setRotation(getRotation() + Math.signum(alpha) * getProperties().getRotationSpeed());
+            } else {
+                setRotation(theta);
+            }
+        }
+    }
+
+    public void shoot() {
         if (getUnit().hasTarget() && !isReloading()) {
             if (getUnit().getTarget().getHitPoints() > 0) {
                 var creator = getProperties().getProjectileFactory();

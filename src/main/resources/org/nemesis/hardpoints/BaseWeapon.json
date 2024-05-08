@@ -1,5 +1,7 @@
 {
   "id": "BaseWeapon",
   "projectileId": "Projectile",
-  "reloadSpeed": 80.0
+  "reloadSpeed": 80.0,
+  "rotatable": true,
+  "initRotation": 0.0
 }

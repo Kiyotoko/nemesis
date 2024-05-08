@@ -189,6 +189,7 @@ public class Game extends Scene {
 			} else {
 				switch (e.getCode()) {
 					case UP:
+					case W:
 						camera.setLayoutY(camera.getLayoutY() - 10);
 						break;
 					case DOWN:
@@ -198,7 +199,25 @@ public class Game extends Scene {
 						camera.setLayoutX(camera.getLayoutX() - 10);
 						break;
 					case RIGHT:
+					case D:
 						camera.setLayoutX(camera.getLayoutX() + 10);
+						break;
+					case A:
+						if (e.isControlDown()) {
+                            if (Player.getController() != null) {
+								for (Unit unit : Player.getController().getUnits()) {
+									getSelected().add(unit);
+								}
+							}
+						} else
+							camera.setLayoutX(camera.getLayoutX() - 10);
+						break;
+					case S:
+						if (e.isControlDown()) {
+							for (Unit unit : getSelected()) {
+								unit.getDestinations().clear();
+							}
+						} else camera.setLayoutY(camera.getLayoutY() + 10);
 						break;
 					default:
 						break;

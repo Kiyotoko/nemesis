@@ -14,10 +14,7 @@ import org.nemesis.content.*;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
 public class Unit extends GameObject {
 
@@ -36,6 +33,11 @@ public class Unit extends GameObject {
 		this.properties = properties;
 
 		setHitPoints(getProperties().getHitPoints());
+		for (var entry : getProperties().getHardPointFactories().entrySet()) {
+			for (var position : entry.getValue())
+				entry.getKey().create(this).setPosition(position);
+		}
+
 		collision.getPoints().addAll(getProperties().getPoints());
 		if (System.getProperty("ShowHitBox") != null) {
 			collision.setFill(Color.TRANSPARENT);
@@ -89,20 +91,19 @@ public class Unit extends GameObject {
 			return icon;
 		}
 
-		private List<String> hardPointIds;
+		private Map<String, List<Point2D>> hardPoints;
 
-		private transient List<Factory<Unit, ? extends HardPoint>> factories;
+		private transient Map<Factory<Unit, ? extends HardPoint>, List<Point2D>> hardPointFactories;
 
-		public List<Factory<Unit, ? extends HardPoint>> getFactories() {
-			return factories;
+		public Map<Factory<Unit, ? extends HardPoint>, List<Point2D>> getHardPointFactories() {
+			return hardPointFactories;
 		}
 
 		@Override
 		public void withContentLoader(@Nonnull ContentLoader loader) {
-			// factory = loader.getProjectileFactory(projectileId);
-			factories = new ArrayList<>();
-			for (String id : hardPointIds) {
-				factories.add(loader.getHardPointFactoryMap().get(id));
+			hardPointFactories = new HashMap<>();
+			for (Map.Entry<String, List<Point2D>> entry : hardPoints.entrySet()) {
+				getHardPointFactories().put(loader.getHardPointFactoryMap().get(entry.getKey()), entry.getValue());
 			}
 		}
 

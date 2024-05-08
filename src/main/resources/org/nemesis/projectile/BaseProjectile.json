@@ -9,5 +9,6 @@
   "damage": 6.0,
   "criticalDamage": 2.4,
   "criticalChance": 0.3,
-  "range": 2000
+  "range": 2000,
+  "rotatable": false
 }

@@ -15,15 +15,15 @@ public class Projectile extends GameObject {
 	private final @Nonnull Player player;
 	private final @Nonnull Properties properties;
 
-	public Projectile(@Nonnull Unit unit, @Nonnull Properties properties) {
-        super(unit.getGame());
-        this.player = unit.getPlayer();
+	public Projectile(@Nonnull Weapon weapon, @Nonnull Properties properties) {
+        super(weapon.getUnit().getGame());
+        this.player = weapon.getUnit().getPlayer();
 		this.properties = properties;
 
-        if (unit.hasTarget()) setDestination(unit.getTarget().getPosition());
-		else setDestination(unit.getPosition());
-		setRotation(unit.getRotation());
-		setPosition(unit.getPosition());
+        if (weapon.getUnit().hasTarget()) setDestination(weapon.getUnit().getTarget().getPosition());
+		else setDestination(weapon.getUnit().getPosition());
+		setRotation(weapon.getTransformedRotation());
+		setPosition(weapon.getTransformedPosition());
 		setRange(getProperties().getRange());
 
 		getPane().getChildren().add(new ImageView(properties.getPane().getImage()));
@@ -69,6 +69,12 @@ public class Projectile extends GameObject {
 
 		public double getRange() {
 			return range;
+		}
+
+		private boolean rotatable;
+
+		public boolean isRotatable() {
+			return rotatable;
 		}
 	}
 

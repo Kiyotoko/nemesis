@@ -13,6 +13,8 @@ public class Weapon extends HardPoint {
     public Weapon(@Nonnull Unit unit, @Nonnull Properties properties) {
         super(unit);
         this.properties = properties;
+
+        setRotation(properties.getInitRotation());
     }
 
     @SuppressWarnings("unused")
@@ -24,21 +26,34 @@ public class Weapon extends HardPoint {
 
         @Override
         public void withContentLoader(@Nonnull ContentLoader loader) {
-            factory = loader.getProjectileFactory(projectileId);
+            projectileFactory = loader.getProjectileFactory(projectileId);
         }
 
         private String projectileId;
 
-        private transient Factory<Unit, Projectile> factory;
+        private transient Factory<Weapon, Projectile> projectileFactory;
 
         @CheckForNull
-        public Factory<Unit, Projectile> getFactory() {
-            return factory;
+        public Factory<Weapon, Projectile> getProjectileFactory() {
+            return projectileFactory;
         }
+
         private double reloadSpeed;
 
         public double getReloadSpeed() {
             return reloadSpeed;
+        }
+
+        private boolean rotatable;
+
+        public boolean isRotatable() {
+            return rotatable;
+        }
+
+        private double initRotation;
+
+        public double getInitRotation() {
+            return initRotation;
         }
     }
 
@@ -46,9 +61,9 @@ public class Weapon extends HardPoint {
     public void update() {
         if (getUnit().hasTarget() && !isReloading()) {
             if (getUnit().getTarget().getHitPoints() > 0) {
-                Factory<Unit, Projectile> creator = getProperties().getFactory();
+                var creator = getProperties().getProjectileFactory();
                 if (creator != null) {
-                    creator.create(getUnit());
+                    creator.create(this);
                     setReloadTime(getProperties().getReloadSpeed());
                 }
             } else {
@@ -61,6 +76,20 @@ public class Weapon extends HardPoint {
     @Nonnull
     public Properties getProperties() {
         return properties;
+    }
+
+    private double rotation;
+
+    public void setRotation(double rotation) {
+        this.rotation = rotation;
+    }
+
+    public double getRotation() {
+        return rotation;
+    }
+
+    public double getTransformedRotation() {
+        return getRotation() + getUnit().getRotation();
     }
 
     private double reloadTime = 0;

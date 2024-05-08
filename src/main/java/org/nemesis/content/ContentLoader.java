@@ -40,10 +40,10 @@ public class ContentLoader {
         }
     }
 
-    private final Map<String, Factory<Unit, Projectile>> projectileFactoryMap = new HashMap<>();
+    private final Map<String, Factory<Weapon, Projectile>> projectileFactoryMap = new HashMap<>();
 
     @CheckForNull
-    public Factory<Unit, Projectile> getProjectileFactory(String id) {
+    public Factory<Weapon, Projectile> getProjectileFactory(String id) {
         return projectileFactoryMap.get(id);
     }
 

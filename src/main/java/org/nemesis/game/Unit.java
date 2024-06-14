@@ -26,11 +26,13 @@ public class Unit extends GameObject {
 
 	private final @Nonnull Pane icon = new Pane();
 	private final @Nonnull Polygon collision = new Polygon();
+	private final @Nonnull BarIndicator indicator;
 
 	public Unit(@Nonnull Player player, @Nonnull Properties properties) {
 		super(player.getGame());
 		this.player = player;
 		this.properties = properties;
+		this.indicator = new BarIndicator(properties.getIndicatorWidth(), Color.RED);
 
 		setHitPoints(getProperties().getHitPoints());
 		for (var entry : getProperties().getHardPointFactories().entrySet()) {
@@ -49,8 +51,9 @@ public class Unit extends GameObject {
 		if (getPlayer().isController()) {
 			animation = new PathAnimation(this);
 		}
-		getPane().getChildren().add(new ImageView(properties.getPane().getImage()));
+		getPane().getChildren().addAll(new ImageView(properties.getPane().getImage()));
 		getIcon().getChildren().add(new ImageView(properties.getIcon().getImage()));
+		getGame().getDown().getChildren().add(indicator);
 		getPlayer().getUnits().add(this);
 	}
 
@@ -117,6 +120,12 @@ public class Unit extends GameObject {
 			return collision;
 		}
 
+		private double indicatorWidth;
+
+		public double getIndicatorWidth() {
+			return indicatorWidth;
+		}
+
 		private double armor;
 
 		public double getArmor() {
@@ -152,6 +161,7 @@ public class Unit extends GameObject {
 				animation.destroy();
 		}
 		getGame().getDown().getChildren().remove(getCollision());
+		getGame().getDown().getChildren().remove(indicator);
 	}
 
 	private void addEventHandler() {
@@ -164,10 +174,12 @@ public class Unit extends GameObject {
 					player.getGame().getSelected().add(this);
 				}
 			} else if (e.getButton() == MouseButton.SECONDARY && !player.isController()) {
-					getGame().getSelected().forEach(unit -> unit.setTarget(this));
-					System.out.printf("Set target for %s to %s%n", getGame().getSelected(), this);
+				getGame().getSelected().forEach(unit -> unit.setTarget(this));
+				System.out.printf("Set target for %s to %s%n", getGame().getSelected(), this);
 			}
 		});
+		getPane().addEventHandler(MouseEvent.MOUSE_ENTERED, e -> indicator.setVisible(true));
+		getPane().addEventHandler(MouseEvent.MOUSE_EXITED, e -> indicator.setVisible(false));
 		getIcon().addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 			if (e.getButton() == MouseButton.PRIMARY) {
 				player.getGame().getSelected().clear();
@@ -224,6 +236,9 @@ public class Unit extends GameObject {
 		super.setPosition(position);
 		getCollision().setLayoutX(position.getX());
 		getCollision().setLayoutY(position.getY());
+
+		indicator.setLayoutX(position.getX() - indicator.getWidth() * 0.5);
+		indicator.setLayoutY(position.getY() - indicator.getHeight() * 0.5);
 	}
 
 	@Override
@@ -269,6 +284,7 @@ public class Unit extends GameObject {
 
 	public void setHitPoints(double hitPoints) {
 		this.hitPoints = hitPoints;
+		indicator.setValue(hitPoints / getProperties().getHitPoints());
 		if (hitPoints <= 0) destroy();
 	}
 }

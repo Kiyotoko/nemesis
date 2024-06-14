@@ -33,6 +33,7 @@
   "collision": [
     -30, -70, 30, -70, 30, 70, -30, 70
   ],
+  "indicatorWidth": 80,
   "armor": 0.2,
   "hitPoints": 80
 }

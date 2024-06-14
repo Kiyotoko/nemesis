@@ -79,7 +79,7 @@ public class Weapon extends HardPoint {
             if (Math.abs(alpha) > getProperties().getRotationSpeed()) {
                 setRotation(getRotation() + Math.signum(alpha) * getProperties().getRotationSpeed());
             } else {
-                setRotation(theta);
+                setRotation(getRotation() + alpha);
             }
         }
     }
